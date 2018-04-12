@@ -10,6 +10,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>some-service-grabber</module>
+        <module>vk-grabber</module>
     </modules>
 </project>
