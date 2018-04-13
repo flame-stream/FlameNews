@@ -16,8 +16,8 @@
 
     <properties>
         <vk.version>0.5.11</vk.version>
-        <slf4j.version>1.7.25</slf4j.version>
-        <jooq.version>0.9.13</jooq.version>
+        <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
+        <dockerfile-maven-version>1.4.0</dockerfile-maven-version>
     </properties>
 
     <dependencyManagement>
@@ -39,8 +39,8 @@
             </dependency>
             <dependency>
                 <groupId>org.jooq</groupId>
-                <artifactId>jool-java-8</artifactId>
-                <version>${jooq.version}</version>
+                <artifactId>jool</artifactId>
+                <version>${jool.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -31,7 +31,10 @@ import java.util.stream.Collectors;
 
 public class Application {
     public static void main(String[] args) throws ClientException, ApiException, StreamingApiException, StreamingClientException, ExecutionException, InterruptedException {
-        final Logger logger = Logger.getLogger(Application.class.getName());
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Parameters number is invalid. Please set {app id} {access token}");
+        }
+
         final int appId = Integer.parseInt(args[0]);
         final String accessToken = args[1];
 
@@ -59,6 +62,7 @@ public class Application {
                     );
         }
 
+        final Logger logger = Logger.getLogger(Application.class.getName());
         final LongSummaryStatistics rpsStat = new LongSummaryStatistics();
         final long[] lastReceivedTs = {-1};
 
