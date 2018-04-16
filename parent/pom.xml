@@ -20,6 +20,8 @@
         <dockerfile-maven-version>1.4.0</dockerfile-maven-version>
     </properties>
 
+    <packaging>pom</packaging>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -49,6 +51,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <packaging>pom</packaging>
 </project>

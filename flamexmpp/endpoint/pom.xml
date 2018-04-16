@@ -17,8 +17,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.expleague</groupId>
+            <groupId>com.expleague.xmpp</groupId>
             <artifactId>xmpp-server</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

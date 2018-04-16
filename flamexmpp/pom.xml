@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>xmpp-server</module>
+        <module>xmpp</module>
         <module>endpoint</module>
     </modules>
 </project>
