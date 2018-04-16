@@ -27,6 +27,10 @@
             <groupId>org.jooq</groupId>
             <artifactId>jool</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.spbsu.flamestream.flamenews</groupId>
+            <artifactId>flamenews-commons</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

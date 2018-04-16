@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.flamenews.vk;
 
+import com.spbsu.flamestream.flamenews.commons.RpsMeasurer;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
@@ -22,7 +23,6 @@ import org.jooq.lambda.Unchecked;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LongSummaryStatistics;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -63,20 +63,15 @@ public class Application {
         }
 
         final Logger logger = Logger.getLogger(Application.class.getName());
-        final LongSummaryStatistics rpsStat = new LongSummaryStatistics();
-        final long[] lastReceivedTs = {-1};
-
+        final RpsMeasurer rpsMeasurer = new RpsMeasurer();
         while (!Thread.currentThread().isInterrupted()) {
             final CountDownLatch latch = new CountDownLatch(1);
             streamingClient.stream().get(streamingActor, new StreamingEventHandler() {
                 @Override
                 public void handle(StreamingCallbackMessage message) {
                     logger.info("RECEIVED: " + message);
-                    if (lastReceivedTs[0] != -1) {
-                        rpsStat.accept(System.nanoTime() - lastReceivedTs[0]);
-                        logger.info("TIME DIFF STAT: " + rpsStat);
-                    }
-                    lastReceivedTs[0] = System.nanoTime();
+                    rpsMeasurer.logRequest();
+                    logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
                 }
             }).execute().addWebSocketListener(new WebSocketListener() {
                 @Override
@@ -93,9 +88,7 @@ public class Application {
                     latch.countDown();
                 }
             });
-
             latch.await();
-            lastReceivedTs[0] = -1;
         }
     }
 }
