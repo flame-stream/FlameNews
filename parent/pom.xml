@@ -44,11 +44,6 @@
                 <artifactId>slf4j-jdk14</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.jooq</groupId>
-                <artifactId>jool</artifactId>
-                <version>${jool.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
