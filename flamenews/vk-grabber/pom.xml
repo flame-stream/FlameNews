@@ -57,7 +57,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.spbsu.flamestream.flamenews.vk.Application</mainClass>
+                            <mainClass>com.spbsu.flamestream.flamenews.vk.VkGrabber</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
