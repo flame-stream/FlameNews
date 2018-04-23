@@ -1,4 +1,4 @@
-package com.spbsu.flamestream.flamenews.commons;
+package com.spbsu.flamestream.flamenews.commons.utils;
 
 import java.util.LongSummaryStatistics;
 

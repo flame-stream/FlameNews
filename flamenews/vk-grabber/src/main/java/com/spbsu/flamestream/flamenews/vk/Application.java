@@ -1,6 +1,6 @@
 package com.spbsu.flamestream.flamenews.vk;
 
-import com.spbsu.flamestream.flamenews.commons.RpsMeasurer;
+import com.spbsu.flamestream.flamenews.commons.utils.RpsMeasurer;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;

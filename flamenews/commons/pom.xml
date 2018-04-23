@@ -13,4 +13,35 @@
 
     <artifactId>flamenews-commons</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.expleague</groupId>
+            <artifactId>commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-j2se</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-registration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-muc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-presence</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tigase</groupId>
+            <artifactId>jaxmpp-roster</artifactId>
+        </dependency>
+    </dependencies>
 </project>

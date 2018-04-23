@@ -16,6 +16,7 @@
 
     <properties>
         <vk.version>0.5.11</vk.version>
+        <tigase.version>3.0.0</tigase.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
         <dockerfile-maven-version>1.4.0</dockerfile-maven-version>
     </properties>
@@ -43,6 +44,36 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-j2se</artifactId>
+                <version>${tigase.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-registration</artifactId>
+                <version>${tigase.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-core</artifactId>
+                <version>${tigase.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-muc</artifactId>
+                <version>${tigase.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-presence</artifactId>
+                <version>${tigase.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tigase</groupId>
+                <artifactId>jaxmpp-roster</artifactId>
+                <version>${tigase.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
