@@ -1,6 +1,7 @@
 package com.spbsu.flamestream.flamenews.commons;
 
 import com.expleague.commons.util.sync.StateLatch;
+import com.expleague.xmpp.model.Item;
 import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.criteria.ElementCriteria;
@@ -13,6 +14,7 @@ import tigase.jaxmpp.core.client.xmpp.modules.registration.InBandRegistrationMod
 import tigase.jaxmpp.core.client.xmpp.modules.roster.RosterModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import tigase.jaxmpp.j2se.J2SEPresenceStore;
 import tigase.jaxmpp.j2se.J2SESessionObject;
@@ -27,6 +29,8 @@ public class JabberClient {
     private final String domain;
     private final String password;
     private final BareJID jid;
+
+    private boolean registered = false;
 
     public JabberClient(String id, String domain, String password) {
         this.id = id;
@@ -131,8 +135,39 @@ public class JabberClient {
 
         System.out.println("Logged in");
 
-        //registered = true;
-        //online();
+        registered = true;
+        online();
+
+        try {
+            final Message message = Message.createMessage();
+            message.setFrom(JID.jidInstance(jid));
+            message.setTo(JID.jidInstance(BareJID.bareJIDInstance("marnikitta", domain)));
+            message.setBody("hello");
+            jaxmpp.send(message);
+        } catch (JaxmppException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void online() {
+        if (jaxmpp.isConnected())
+            return;
+        if (!registered) {
+            start();
+        } else {
+            final Presence stanza;
+            try {
+                stanza = Presence.create();
+
+                jaxmpp.login();
+                latch.state(2, 1);
+                jaxmpp.send(stanza);
+                System.out.println("Online presence sent");
+            } catch (JaxmppException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static class PrinterAsyncCallback implements AsyncCallback {
