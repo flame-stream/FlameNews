@@ -24,6 +24,15 @@
 
     <packaging>pom</packaging>
 
+    <repositories>
+        <repository>
+            <snapshots />
+            <id>tigase</id>
+            <name>Tigase rpos</name>
+            <url>http://maven-repo.tigase.org/repository/release</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
