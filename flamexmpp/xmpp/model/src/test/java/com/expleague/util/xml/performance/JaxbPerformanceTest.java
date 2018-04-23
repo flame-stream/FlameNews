@@ -3,7 +3,7 @@ package com.expleague.util.xml.performance;
 import com.expleague.xmpp.model.Item;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.stanza.Message;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -5,6 +5,7 @@ import com.expleague.xmpp.model.Item;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.XMPPQuery;
 import com.expleague.xmpp.model.stanza.Iq;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -14,6 +15,7 @@ import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,6 +55,10 @@ public class RosterQuery extends XMPPQuery {
 
   public RosterQuery() {}
 
+  public RosterQuery(Collection<RosterItem> items) {
+    this.items.addAll(items);
+  }
+
   @Override
   public Item reply(Iq.IqType type) {
     return this;
@@ -73,11 +79,13 @@ public class RosterQuery extends XMPPQuery {
 
     @XmlElement(namespace = NS)
     private List<String> group;
+
     @XmlAnyElement(lax = true)
     private List<Item> any;
 
     public RosterItem(JID jid) {
       this.jid = jid;
+      this.subscription = Subscription.NONE;
     }
 
     public RosterItem(JID jid, Subscription subscription, String name) {
@@ -93,6 +101,23 @@ public class RosterQuery extends XMPPQuery {
       this.ask = ask;
     }
 
+    public RosterItem(JID jid, Subscription subscription, String name, Ask ask, List<String> group) {
+      this.jid = jid;
+      this.subscription = subscription;
+      this.name = name;
+      this.ask = ask;
+      this.group = new ArrayList<>(group);
+    }
+
+    public Subscription subscription() {
+      return subscription == null ? Subscription.NONE : subscription;
+    }
+
+    @Nullable
+    public Ask ask() {
+      return ask;
+    }
+
     @Override
     public List<? super Item> any() {
       return any != null ? any : (any = new ArrayList<>());
@@ -100,18 +125,26 @@ public class RosterQuery extends XMPPQuery {
 
     public RosterItem() {}
 
+    public String name() {
+      return name;
+    }
+
     public JID jid() {
       return jid;
     }
 
-    public void group(String group) {
-      (this.group = this.group != null ? this.group : new ArrayList<>())
-        .add(group);
+    public RosterItem withSubscription(Subscription subscription) {
+      return new RosterItem(jid, subscription, name, ask, group);
+    }
+
+    public RosterItem withAsk(Ask ask) {
+      return new RosterItem(jid, subscription, name, ask, group);
     }
 
     @XmlEnum
     public enum Subscription {
       @XmlEnumValue(value = "none") NONE,
+      @XmlEnumValue(value = "remove") REMOVE,
       @XmlEnumValue(value = "to") TO,
       @XmlEnumValue(value = "from") FROM,
       @XmlEnumValue(value = "both") BOTH,

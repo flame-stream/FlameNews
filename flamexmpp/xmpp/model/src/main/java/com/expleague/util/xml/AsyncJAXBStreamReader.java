@@ -1,6 +1,5 @@
 package com.expleague.util.xml;
 
-import com.expleague.commons.func.Action;
 import com.expleague.util.xml.stolen.StAXStreamConnector;
 import com.expleague.xmpp.model.Stream;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
@@ -16,6 +15,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 public class AsyncJAXBStreamReader {
   private static final Logger log = Logger.getLogger(AsyncJAXBStreamReader.class.getName());
   private final StAXStreamConnector connector;
-  private Action action;
+  private Consumer action;
 
   public AsyncJAXBStreamReader(AsyncXMLStreamReader reader, JAXBContext context) {
     try {
@@ -36,7 +36,7 @@ public class AsyncJAXBStreamReader {
         public void afterUnmarshal(Object target, Object parent) {
           if (parent instanceof Stream)
             //noinspection unchecked
-            action.invoke(target);
+            action.accept(target);
         }
       });
       final XmlVisitor handler = unmarshaller.createUnmarshallerHandler(null, false, null);
@@ -49,7 +49,7 @@ public class AsyncJAXBStreamReader {
     //noinspection unchecked
   }
 
-  public void drain(Action action) throws XMLStreamException, SAXException {
+  public void drain(Consumer action) throws XMLStreamException, SAXException {
     this.action = action;
     connector.drain();
   }

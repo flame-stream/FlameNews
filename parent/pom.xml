@@ -20,6 +20,15 @@
         <tigase.xmltools.version>3.4.5</tigase.xmltools.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
         <dockerfile-maven-version>1.4.0</dockerfile-maven-version>
+        <akka-http-2.11.version>10.1.1</akka-http-2.11.version>
+        <jaxb.version>2.2.11</jaxb.version>
+        <aalto-xml.version>1.0.0</aalto-xml.version>
+        <pushy.version>0.5.1</pushy.version>
+        <jackson-module-jaxb-annotations.version>2.7.1</jackson-module-jaxb-annotations.version>
+        <scala-java8-compat_2.11.version>0.7.0</scala-java8-compat_2.11.version>
+        <netty-tcnative.version>1.1.33.Fork9</netty-tcnative.version>
+        <alpn-api.version>1.1.2.v20150522</alpn-api.version>
+        <jcr.version>2.0</jcr.version>
     </properties>
 
     <packaging>pom</packaging>
@@ -39,6 +48,11 @@
                 <groupId>com.expleague</groupId>
                 <artifactId>xmpp-server</artifactId>
                 <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>com.typesafe.akka</groupId>
+                <artifactId>akka-http_2.11</artifactId>
+                <version>${akka-http-2.11.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.spbsu.flamestream.flamenews</groupId>
@@ -95,6 +109,68 @@
                 <artifactId>tigase-xmltools</artifactId>
                 <version>${tigase.xmltools.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml</groupId>
+                <artifactId>aalto-xml</artifactId>
+                <version>${aalto-xml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.relayrides</groupId>
+                <artifactId>pushy</artifactId>
+                <version>${pushy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${jackson-module-jaxb-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang.modules</groupId>
+                <artifactId>scala-java8-compat_2.11</artifactId>
+                <version>${scala-java8-compat_2.11.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative</artifactId>
+                <version>${netty-tcnative.version}</version>
+                <classifier>${os.detected.classifier}</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.alpn</groupId>
+                <artifactId>alpn-api</artifactId>
+                <version>${alpn-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.3</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <extensions>
+            <!-- Use os-maven-plugin to initialize the "os.detected" properties -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.4.0.Final</version>
+            </extension>
+        </extensions>
+    </build>
 </project>

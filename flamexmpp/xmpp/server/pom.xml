@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <httpclient.version>4.5.3</httpclient.version>
+    </properties>
+
+    <parent>
+        <artifactId>flamenews-parent</artifactId>
+        <groupId>com.spbsu.flamestream.flamenews</groupId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../../parent</relativePath>
+    </parent>
+
+    <groupId>com.expleague.xmpp</groupId>
+    <artifactId>xmpp-server</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.expleague.xmpp</groupId>
+            <artifactId>xmpp-model</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-stream_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative</artifactId>
+            <classifier>${os.detected.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.alpn</groupId>
+            <artifactId>alpn-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-java8-compat_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.relayrides</groupId>
+            <artifactId>pushy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+    </dependencies>
+</project>

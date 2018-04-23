@@ -1,9 +1,9 @@
 package com.expleague.xmpp.model;
 
-import com.expleague.commons.filters.Filter;
 import com.expleague.xmpp.model.control.receipts.Request;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Experts League
@@ -27,9 +27,9 @@ public interface AnyHolder {
     return any().stream().anyMatch(x -> x != null && clazz.isAssignableFrom(x.getClass()));
   }
 
-  default <T extends Item> boolean has(Class<T> clazz, Filter<T> filter) {
+  default <T extends Item> boolean has(Class<T> clazz, Predicate<T> filter) {
     //noinspection unchecked
-    return any().stream().filter(x -> x != null && clazz.isAssignableFrom(x.getClass())).map(x -> filter.accept((T)x)).anyMatch(b -> b);
+    return any().stream().filter(x -> x != null && clazz.isAssignableFrom(x.getClass())).anyMatch(x -> filter.test((T) x));
   }
 
   default void remove(Class<Request> clazz) {

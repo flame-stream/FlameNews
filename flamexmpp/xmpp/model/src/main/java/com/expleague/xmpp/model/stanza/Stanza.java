@@ -119,6 +119,11 @@ public class Stanza extends Item {
     return id;
   }
 
+  public Stanza id(String id) {
+    this.id = id;
+    return this;
+  }
+
   public String strippedVitalikId() {
     final int beginIndex = id.lastIndexOf('-');
     if (beginIndex > 0)

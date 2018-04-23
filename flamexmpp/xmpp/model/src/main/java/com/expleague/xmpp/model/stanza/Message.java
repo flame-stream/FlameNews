@@ -33,9 +33,9 @@ import java.util.List;
 
 /**
  * <p>Java class for anonymous complex type.
- *
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- *
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -68,8 +68,6 @@ import java.util.List;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- *
- *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "message")
@@ -93,6 +91,13 @@ public class Message extends Stanza implements AnyHolder {
     this.from = from;
     this.to = to;
     any.add(new Body(message));
+  }
+
+  public Message(JID from, JID to, Err err) {
+    this.from = from;
+    this.to = to;
+    this.error = err;
+    this.type = MessageType.ERROR;
   }
 
   public Message(JID from, JID to, Item... any) {
@@ -155,12 +160,13 @@ public class Message extends Stanza implements AnyHolder {
   }
 
 
-  public <T extends Item> T copy(String idSuffix){
+  public <T extends Item> T copy(String idSuffix) {
     final Message clone = super.copy(idSuffix);
-    if (any != null)
+    if (any != null) {
       clone.any = new ArrayList<>(any);
+    }
     //noinspection unchecked
-    return (T)clone;
+    return (T) clone;
   }
 
   @Override
@@ -181,9 +187,9 @@ public class Message extends Stanza implements AnyHolder {
 
   /**
    * <p>Java class for anonymous complex type.
-   *
+   * <p>
    * <p>The following schema fragment specifies the expected content contained within this class.
-   *
+   * <p>
    * <pre>
    * &lt;complexType>
    *   &lt;simpleContent>
@@ -193,8 +199,6 @@ public class Message extends Stanza implements AnyHolder {
    *   &lt;/simpleContent>
    * &lt;/complexType>
    * </pre>
-   *
-   *
    */
   @XmlAccessorType(XmlAccessType.FIELD)
   @XmlRootElement(name = "body")
@@ -248,9 +252,9 @@ public class Message extends Stanza implements AnyHolder {
 
   /**
    * <p>Java class for anonymous complex type.
-   *
+   * <p>
    * <p>The following schema fragment specifies the expected content contained within this class.
-   *
+   * <p>
    * <pre>
    * &lt;complexType>
    *   &lt;simpleContent>
@@ -260,8 +264,6 @@ public class Message extends Stanza implements AnyHolder {
    *   &lt;/simpleContent>
    * &lt;/complexType>
    * </pre>
-   *
-   *
    */
   @XmlAccessorType(XmlAccessType.FIELD)
   @XmlRootElement(name = "subject")
@@ -286,9 +288,9 @@ public class Message extends Stanza implements AnyHolder {
 
   /**
    * <p>Java class for anonymous complex type.
-   *
+   * <p>
    * <p>The following schema fragment specifies the expected content contained within this class.
-   *
+   * <p>
    * <pre>
    * &lt;complexType>
    *   &lt;simpleContent>
@@ -298,12 +300,10 @@ public class Message extends Stanza implements AnyHolder {
    *   &lt;/simpleContent>
    * &lt;/complexType>
    * </pre>
-   *
-   *
    */
   @XmlAccessorType(XmlAccessType.FIELD)
   @XmlType(name = "", propOrder = {
-      "value"
+    "value"
   })
   @XmlRootElement(name = "thread")
   public static class Thread extends Item {

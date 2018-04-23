@@ -111,6 +111,10 @@ public class Presence extends Stanza implements AnyHolder {
     return status != null ? status : new Status(type == null ? PresenceType.AVAILABLE : type);
   }
 
+  public PresenceType type() {
+    return type;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
