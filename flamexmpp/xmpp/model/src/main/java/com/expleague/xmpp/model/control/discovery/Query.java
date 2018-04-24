@@ -13,8 +13,4 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 public class Query extends XMPPQuery {
-  @Override
-  public Item reply(Iq.IqType type) {
-    return this;
-  }
 }

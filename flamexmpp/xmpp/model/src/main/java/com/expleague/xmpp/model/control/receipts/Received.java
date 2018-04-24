@@ -16,7 +16,6 @@ public class Received extends Item {
   private String id;
 
   public Received() {
-//    System.out.println();
   }
 
   public Received(final String id) {

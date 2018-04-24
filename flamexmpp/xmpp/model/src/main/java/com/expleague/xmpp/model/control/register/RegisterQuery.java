@@ -167,24 +167,12 @@ public class RegisterQuery {
     return query;
   }
 
-  public void name(String name) {
-    this.name = name;
-  }
-
-  public void passwd(String passwd) {
-    this.password = passwd;
-  }
-
   public String name() {
     return name;
   }
 
   public String passwd() {
     return password;
-  }
-
-  public void username(String name) {
-    username = name;
   }
 
   public String username() {
@@ -210,17 +198,5 @@ public class RegisterQuery {
 
   public int sex() {
     return text != null ? Integer.parseInt(text.split("\\s+")[1]) : 0;
-  }
-
-  public String platform() {
-    return email;
-  }
-
-  public boolean expert() {
-    return platform() != null && platform().endsWith("/expert");
-  }
-
-  public boolean trusted() {
-    return platform() != null && platform().endsWith("/admin/expert");
   }
 }

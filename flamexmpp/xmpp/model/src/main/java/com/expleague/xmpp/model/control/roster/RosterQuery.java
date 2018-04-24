@@ -39,29 +39,20 @@ public class RosterQuery extends XMPPQuery {
   @XmlAttribute
   private String version;
 
-  public RosterQuery(JID... jids) {
-    for (int i = 0; i < jids.length; i++) {
-      items.add(new RosterItem(jids[i]));
-    }
-  }
-
-  public List<RosterItem> items() {
-    return Collections.unmodifiableList(items);
-  }
-
-  public void add(RosterItem item) {
-    items.add(item);
-  }
-
   public RosterQuery() {}
 
   public RosterQuery(Collection<RosterItem> items) {
     this.items.addAll(items);
   }
 
-  @Override
-  public Item reply(Iq.IqType type) {
-    return this;
+  public RosterQuery(JID... jids) {
+    for (JID jid : jids) {
+      items.add(new RosterItem(jid));
+    }
+  }
+
+  public List<RosterItem> items() {
+    return Collections.unmodifiableList(items);
   }
 
   public static class RosterItem extends Item implements AnyHolder {
@@ -86,6 +77,11 @@ public class RosterQuery extends XMPPQuery {
     public RosterItem(JID jid) {
       this.jid = jid;
       this.subscription = Subscription.NONE;
+    }
+
+    public RosterItem(JID jid, Subscription subscription) {
+      this.jid = jid;
+      this.subscription = subscription;
     }
 
     public RosterItem(JID jid, Subscription subscription, String name) {
@@ -131,14 +127,6 @@ public class RosterQuery extends XMPPQuery {
 
     public JID jid() {
       return jid;
-    }
-
-    public RosterItem withSubscription(Subscription subscription) {
-      return new RosterItem(jid, subscription, name, ask, group);
-    }
-
-    public RosterItem withAsk(Ask ask) {
-      return new RosterItem(jid, subscription, name, ask, group);
     }
 
     @XmlEnum

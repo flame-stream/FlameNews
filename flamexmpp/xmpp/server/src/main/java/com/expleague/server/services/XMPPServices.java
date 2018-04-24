@@ -19,14 +19,12 @@ import java.util.Map;
 public class XMPPServices extends AbstractActor {
   private final Map<String, ActorRef> knownServices = new HashMap<>();
 
-  public static Props props() {
-    return Props.create(XMPPServices.class);
+  public XMPPServices(ActorRef roster) {
+    knownServices.put(RosterQuery.NS, roster);
   }
 
-  @Override
-  public void preStart() throws Exception {
-    super.preStart();
-    knownServices.put(RosterQuery.NS, context().actorOf(RosterService.props(), "roster"));
+  public static Props props(ActorRef roster) {
+    return Props.create(XMPPServices.class, roster);
   }
 
   @Override

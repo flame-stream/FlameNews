@@ -4,28 +4,29 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
+import com.expleague.server.services.RosterService;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.stanza.Iq;
 import com.expleague.xmpp.model.stanza.Message;
 import com.expleague.xmpp.model.stanza.Presence;
-import com.expleague.xmpp.model.stanza.data.Err;
-import scala.Option;
+import com.expleague.xmpp.model.stanza.Presence.PresenceType;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 public class XMPP extends AbstractActor {
   private static final Logger log = Logger.getLogger(XMPP.class.getName());
   private final JID hostJID = JID.parse(XMPPServerApplication.config().domain());
 
-  private ActorRef services;
+  private final ActorRef services;
+  private final ActorRef roster;
 
-  @Override
-  public void preStart() {
-    services = context().actorOf(XMPPServices.props(), "services");
+  public XMPP() {
+    this.roster = context().actorOf(RosterService.props(), "roster");
+    this.services = context().actorOf(XMPPServices.props(roster), "services");
   }
 
   public static Props props() {
@@ -43,57 +44,46 @@ public class XMPP extends AbstractActor {
   }
 
   private void onIq(Iq<?> iq) {
-    if (iq.isBroadcast()) {
+    if (iq.isBroadcast() || iq.to().bareEq(hostJID)) {
       services.forward(iq, context());
     } else {
-      final Optional<ActorRef> child = getContext().findChild(iq.to().local());
-      if (!child.isPresent()) {
-        log.warning("User is not connected");
-        sender().tell(Iq.answer(iq, new Err(
-            Err.Cause.SERVICE_UNAVAILABLE,
-            Err.ErrType.CANCEL,
-            "User is offline or doesn't exists"
-          )
-        ), self());
-      } else {
-        child.get().forward(iq, context());
-      }
+      findOrAllocate(iq.to()).forward(iq, context());
     }
   }
 
   private void onMessage(Message message) {
-    final Optional<ActorRef> child = getContext().findChild(message.to().local());
-    if (!child.isPresent()) {
-      log.warning("User is not connected");
-      final Message error = new Message(
-        hostJID,
-        message.from(),
-        new Err(Err.Cause.SERVICE_UNAVAILABLE, Err.ErrType.CANCEL, "User is offline or doesn't exists")
-      );
-      error.id(message.id());
-      sender().tell(error, self());
-    } else {
-      child.get().forward(message, context());
+    if (message.to() == null) {
+      log.warning("Message without destination " + message);
+      return;
     }
+
+    findOrAllocate(message.to()).forward(message, context());
   }
 
   private void onPresence(Presence presence) {
-    log.info("Presence: " + presence);
+    if (presence.to() == null) {
+      // Broadcast to subscribers
+      PatternsCS.ask(roster, presence.from(), 10000)
+        .thenApply(list -> (List<JID>) list)
+        .thenAccept(subscribers -> {
+          subscribers.forEach(subscriber -> {
+            findOrAllocate(subscriber).tell(presence, self());
+          });
+        });
+    } else if (presence.type() == PresenceType.SUBSCRIBED || presence.type() == PresenceType.UNSUBSCRIBED) {
+      roster.tell(presence, self());
+    } else {
+      findOrAllocate(presence.to()).forward(presence, context());
+    }
   }
 
   private void onJID(JID jid) {
-    final ActorRef sender = sender();
-    findOrAllocate(jid).thenAccept(agent -> sender.tell(agent, self()));
+    sender().tell(findOrAllocate(jid), self());
   }
 
-  private CompletionStage<ActorRef> findOrAllocate(JID jid) {
+  private ActorRef findOrAllocate(JID jid) {
     final String id = jid.local();
-    final Option<ActorRef> child = context().child(id);
-    if (child.isDefined()) {
-      return CompletableFuture.completedFuture(child.get());
-    }
-
-    // TODO: check whether user with such id exists or not
-    return CompletableFuture.completedFuture(context().actorOf(UserAgent.props(jid.bare(), self()), id));
+    final Optional<ActorRef> child = getContext().findChild(id);
+    return child.orElseGet(() -> context().actorOf(UserAgent.props(jid.bare(), self()), id));
   }
 }

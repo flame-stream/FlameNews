@@ -15,9 +15,4 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement(name = "ping", namespace = PingQuery.NS)
 public class PingQuery extends XMPPQuery {
   public static final String NS = "urn:xmpp:ping";
-
-  @Override
-  public Item reply(Iq.IqType type) {
-    return this;
-  }
 }

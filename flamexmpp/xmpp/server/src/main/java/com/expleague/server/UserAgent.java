@@ -5,7 +5,11 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.expleague.xmpp.model.JID;
+import com.expleague.xmpp.model.stanza.Iq;
 import com.expleague.xmpp.model.stanza.Message;
+import com.expleague.xmpp.model.stanza.Presence;
+import com.expleague.xmpp.model.stanza.Stanza;
+import com.expleague.xmpp.model.stanza.data.Err;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +37,8 @@ public class UserAgent extends AbstractActor {
     return ReceiveBuilder.create()
       .match(ConnStatus.class, this::onStatus)
       .match(Message.class, this::onMessage)
+      .match(Iq.class, this::onIq)
+      .match(Presence.class, this::onPresence)
       .build();
   }
 
@@ -43,19 +49,53 @@ public class UserAgent extends AbstractActor {
       connections.remove(status.resource);
       if (connections.isEmpty()) {
         log.fine("All connections are closed, stopping user agent");
+        xmpp.tell(new Presence(bare, false), self());
         context().stop(self());
       }
     }
   }
 
-  private void onMessage(Message stanza) {
-    if (!stanza.to().bareEq(bare)) {
-      log.warning("All messages that are not to this user should go directly to \"/xmpp\" agent");
+  private void onPresence(Presence presence) {
+    if (!presence.from().bareEq(presence.from())) {
+      connections.values().forEach(c -> c.forward(presence, context()));
+    }
+  }
+
+  private void onIq(Iq<?> iq) {
+    if (!online()) {
+      final Iq<Err> error = Iq.answer(iq, new Err(
+          Err.Cause.SERVICE_UNAVAILABLE,
+          Err.ErrType.CANCEL,
+          "User is offline or doesn't exists"
+        )
+      );
+      error.id(iq.id());
+      sender().tell(error, self());
       return;
     }
 
+    deliverStanza(iq);
+  }
+
+  private void onMessage(Message message) {
+    if (!online()) {
+      final Message error = new Message(
+        bare,
+        message.from(),
+        new Err(Err.Cause.SERVICE_UNAVAILABLE, Err.ErrType.CANCEL, "User is offline or doesn't exists")
+      );
+      error.id(message.id());
+      sender().tell(error, self());
+      return;
+    }
+
+    deliverStanza(message);
+  }
+
+  private void deliverStanza(Stanza stanza) {
     final String resource = stanza.to().resource();
     final ActorRef connection;
+
     if (resource.isEmpty() || !connections.containsKey(resource)) {
       connection = connections.values()
         .stream()
@@ -66,6 +106,10 @@ public class UserAgent extends AbstractActor {
     }
 
     connection.forward(stanza, context());
+  }
+
+  private boolean online() {
+    return !connections.isEmpty();
   }
 
   public static class ConnStatus {

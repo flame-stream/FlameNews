@@ -1,6 +1,7 @@
 package com.expleague.xmpp.model.control.sasl;
 
-import com.expleague.server.Roster;
+import com.expleague.server.services.AuthRepository;
+import com.expleague.server.services.Roster;
 import com.expleague.server.XMPPServerApplication;
 import com.expleague.server.XMPPUser;
 import com.expleague.xmpp.model.control.XMPPFeature;
@@ -60,7 +61,7 @@ public class Mechanisms extends XMPPFeature {
           final Optional<AuthorizeCallback> authO = Stream.of(callbacks).flatMap(Functions.instancesOf(AuthorizeCallback.class)).findAny();
           if (passwdO.isPresent() && nameO.isPresent()) {
             final PasswordCallback passwd = passwdO.get();
-            final XMPPUser user = new Roster.InMemRoster().user(nameO.get().getDefaultName());
+            final XMPPUser user = new AuthRepository.InMemAuthRepository().user(nameO.get().getDefaultName());
             if (user != null)
               passwd.setPassword(user.password().toCharArray());
             else

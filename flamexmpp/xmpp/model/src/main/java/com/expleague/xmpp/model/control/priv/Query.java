@@ -16,9 +16,4 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class Query extends XMPPQuery {
   @XmlElement(name = "storage", namespace = "storage:bookmarks")
   private String storage;
-
-  @Override
-  public Item reply(Iq.IqType type) {
-    return this;
-  }
 }
