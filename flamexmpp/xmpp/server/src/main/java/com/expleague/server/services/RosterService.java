@@ -46,6 +46,10 @@ public class RosterService extends AbstractActor {
   }
 
   private void onIq(Iq<RosterQuery> rosterIq) {
+    if (rosterIq.to() != null) {
+      log.warning("Requests to roster must not include 'to' attribute");
+    }
+
     switch (rosterIq.type()) {
       case GET:
         final List<RosterItem> items = roster.items(rosterIq.from().local())
