@@ -81,21 +81,9 @@ public class ConnectedPhase extends XMPPPhase {
    * This is done so we can differentiate incoming and outgoing stanzas
    */
   private void onStanza(Stanza stanza) throws ExecutionException, InterruptedException {
-    if (!bound) {
-      final JID jidWithResource = tryBind(stanza);
-      if (jidWithResource != null) {
-        this.jid = jidWithResource;
-        bound = true;
-        userAgent = (ActorRef) PatternsCS.ask(
-          xmpp,
-          jidWithResource,
-          Timeout.apply(Duration.create(60, TimeUnit.SECONDS))
-        ).toCompletableFuture().get();
-        userAgent.tell(new UserAgent.ConnStatus(true, jid.resource()), self());
-      } else {
-        log.warning("There shouldn't be any messages before bind. Got " + stanza);
-        return;
-      }
+    if (!bound && !tryBind(stanza)) {
+      log.warning("There shouldn't be any messages before bind. Got " + stanza);
+      return;
     }
 
     if (jid.equals(stanza.to())) {
@@ -108,8 +96,7 @@ public class ConnectedPhase extends XMPPPhase {
     }
   }
 
-  @Nullable
-  private JID tryBind(Stanza stanza) {
+  private boolean tryBind(Stanza stanza) throws ExecutionException, InterruptedException {
     if (stanza instanceof Iq) {
       final Iq<?> iq = ((Iq<?>) stanza);
       if (iq.type() == Iq.IqType.SET && iq.get() instanceof Bind) {
@@ -125,12 +112,20 @@ public class ConnectedPhase extends XMPPPhase {
         }
         jid = jid.resource(resource);
         answer(Iq.answer(iq, new Bind(jid)));
-        return jid;
+
+        bound = true;
+        userAgent = (ActorRef) PatternsCS.ask(
+          xmpp,
+          jid,
+          Timeout.apply(Duration.create(60, TimeUnit.SECONDS))
+        ).toCompletableFuture().get();
+        userAgent.tell(new UserAgent.ConnStatus(true, jid.resource()), self());
+        return true;
       } else {
-        return null;
+        return false;
       }
     } else {
-      return null;
+      return false;
     }
   }
 
