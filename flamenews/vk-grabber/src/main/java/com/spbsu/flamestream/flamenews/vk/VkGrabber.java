@@ -1,5 +1,6 @@
 package com.spbsu.flamestream.flamenews.vk;
 
+import com.spbsu.flamestream.flamenews.commons.JabberClient;
 import com.spbsu.flamestream.flamenews.commons.utils.RpsMeasurer;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
@@ -29,14 +30,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Application {
+public class VkGrabber {
     public static void main(String[] args) throws ClientException, ApiException, StreamingApiException, StreamingClientException, ExecutionException, InterruptedException {
-        if (args.length != 2) {
-            throw new IllegalArgumentException("Parameters number is invalid. Please set {app id} {access token}");
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Parameters number is invalid. Please set {VK app id} {VK access token} {Jabber JID} {Jabber password}");
         }
 
         final int appId = Integer.parseInt(args[0]);
         final String accessToken = args[1];
+        final String jid = args[2];
+        final String password = args[3];
 
         final TransportClient transportClient = new HttpTransportClient();
         final VkApiClient vkClient = new VkApiClient(transportClient);
@@ -62,7 +65,11 @@ public class Application {
                     );
         }
 
-        final Logger logger = Logger.getLogger(Application.class.getName());
+        final int dogIndex = jid.indexOf('@');
+        final JabberClient client = new JabberClient(jid.substring(0, dogIndex), jid.substring(dogIndex + 1, jid.length()), password);
+        client.online();
+
+        final Logger logger = Logger.getLogger(VkGrabber.class.getName());
         final RpsMeasurer rpsMeasurer = new RpsMeasurer();
         while (!Thread.currentThread().isInterrupted()) {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -70,6 +77,8 @@ public class Application {
                 @Override
                 public void handle(StreamingCallbackMessage message) {
                     logger.info("RECEIVED: " + message);
+                    client.send(message.getEvent().getText());
+
                     rpsMeasurer.logRequest();
                     logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
                 }
@@ -90,5 +99,7 @@ public class Application {
             });
             latch.await();
         }
+
+        client.offline();
     }
 }

@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.flamenews.commons;
 
 import com.expleague.commons.util.sync.StateLatch;
-import com.expleague.xmpp.model.Item;
 import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.criteria.ElementCriteria;
@@ -12,142 +11,122 @@ import tigase.jaxmpp.core.client.xmpp.modules.muc.MucModule;
 import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
 import tigase.jaxmpp.core.client.xmpp.modules.registration.InBandRegistrationModule;
 import tigase.jaxmpp.core.client.xmpp.modules.roster.RosterModule;
-import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
-import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
-import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
-import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
+import tigase.jaxmpp.core.client.xmpp.stanzas.*;
 import tigase.jaxmpp.j2se.J2SEPresenceStore;
 import tigase.jaxmpp.j2se.J2SESessionObject;
 import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.jaxmpp.j2se.connectors.socket.SocketConnector;
 
-public class JabberClient {
-    protected final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
-    private final StateLatch latch = new StateLatch();
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.logging.Logger;
 
-    private final String id;
-    private final String domain;
+public class JabberClient {
+    private static final String RESOURCE = "grabber";
+    private static final int RETRY_LOGIN_COUNT = 10;
+    private static final long RETRY_LOGIN_SLEEP_MILLIS = 100L;
+    private static final Logger logger = Logger.getLogger(JabberClient.class.getName());
+
+    private final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
+    private final StateLatch latch = new StateLatch();
+    private final Set<JID> liveSubscribers = new ConcurrentSkipListSet<>();
+
     private final String password;
-    private final BareJID jid;
+    private final JID jid;
 
     private boolean registered = false;
 
     public JabberClient(String id, String domain, String password) {
-        this.id = id;
-        this.domain = domain;
         this.password = password;
-        this.jid = BareJID.bareJIDInstance(id, domain);
+        this.jid = JID.jidInstance(id, domain, RESOURCE);
 
         jaxmpp.getProperties().setUserProperty(SessionObject.DOMAIN_NAME, domain);
         jaxmpp.getProperties().setUserProperty(SocketConnector.HOSTNAME_VERIFIER_DISABLED_KEY, true);
 
         PresenceModule.setPresenceStore(jaxmpp.getSessionObject(), new J2SEPresenceStore());
         jaxmpp.getModulesManager().register(new MucModule());
-        jaxmpp.getModulesManager().register(new PresenceModule());
+        jaxmpp.getModulesManager().register(new PresenceHandler(jaxmpp, liveSubscribers));
         jaxmpp.getModulesManager().register(new RosterModule());
     }
 
-    public void start() {
-        jaxmpp.getModulesManager().register(new InBandRegistrationModule());
-        jaxmpp.getSessionObject().setProperty(InBandRegistrationModule.IN_BAND_REGISTRATION_MODE_KEY, Boolean.TRUE);
-        latch.state(1);
-        jaxmpp.getEventBus().addHandler(
-                InBandRegistrationModule.ReceivedRequestedFieldsHandler.ReceivedRequestedFieldsEvent.class,
-                new InBandRegistrationModule.ReceivedRequestedFieldsHandler() {
-                    public void onReceivedRequestedFields(SessionObject sessionObject, IQ responseStanza) {
-                        try {
-                            final InBandRegistrationModule module = jaxmpp.getModule(InBandRegistrationModule.class);
-                            module.register(jid.toString(), password, null, new PrinterAsyncCallback("register", latch) {
-                                @Override
-                                protected void transactionComplete() {
-                                    super.transactionComplete();
-                                    try {
-                                        jaxmpp.getConnector().stop();
-                                    } catch (JaxmppException e) {
-                                        throw new RuntimeException(e);
+    private void start() {
+        //register
+        {
+            jaxmpp.getModulesManager().register(new InBandRegistrationModule());
+            jaxmpp.getSessionObject().setProperty(InBandRegistrationModule.IN_BAND_REGISTRATION_MODE_KEY, Boolean.TRUE);
+            latch.state(1);
+            jaxmpp.getEventBus().addHandler(
+                    InBandRegistrationModule.ReceivedRequestedFieldsHandler.ReceivedRequestedFieldsEvent.class,
+                    new InBandRegistrationModule.ReceivedRequestedFieldsHandler() {
+                        public void onReceivedRequestedFields(SessionObject sessionObject, IQ responseStanza) {
+                            try {
+                                final InBandRegistrationModule module = jaxmpp.getModule(InBandRegistrationModule.class);
+                                module.register(jid.getLocalpart(), password, null, new PrinterAsyncCallback("register", latch) {
+                                    @Override
+                                    protected void transactionComplete() {
+                                        super.transactionComplete();
+                                        try {
+                                            jaxmpp.getConnector().stop();
+                                        } catch (JaxmppException e) {
+                                            throw new RuntimeException(e);
+                                        }
                                     }
-                                }
-                            });
-                        } catch (JaxmppException e) {
-                            throw new RuntimeException(e);
+                                });
+                            } catch (JaxmppException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
-                    }
-                });
+                    });
 
-        final long loginSleepTimeoutInMillis = 100L;
-        final int maxTriesNumber = 10;
-        boolean login = false;
-        int triesNumber = 0;
-        while (!login && triesNumber < maxTriesNumber) {
-            try {
-                jaxmpp.login();
-                login = true;
-            } catch (JaxmppException je) {
+            boolean login = false;
+            int triesNumber = 0;
+            while (!login && triesNumber < RETRY_LOGIN_COUNT) {
                 try {
-                    Thread.sleep(loginSleepTimeoutInMillis);
-                } catch (InterruptedException ignored) {
+                    jaxmpp.login();
+                    login = true;
+                } catch (JaxmppException je) {
+                    try {
+                        Thread.sleep(RETRY_LOGIN_SLEEP_MILLIS);
+                    } catch (InterruptedException ignored) {
+                    }
+                } finally {
+                    triesNumber++;
                 }
-            } finally {
-                triesNumber++;
             }
+            if (!login) {
+                throw new RuntimeException("Cannot start server");
+            }
+
+            latch.state(2, 1);
+            logger.info("Registration phase passed");
         }
-        if (!login) {
-            throw new RuntimeException("Cannot start server");
+
+        //login
+        {
+            jaxmpp.getSessionObject().setProperty(InBandRegistrationModule.IN_BAND_REGISTRATION_MODE_KEY, Boolean.FALSE);
+            jaxmpp.getProperties().setUserProperty(SessionObject.USER_BARE_JID, jid.getBareJid());
+            jaxmpp.getProperties().setUserProperty(SessionObject.PASSWORD, password);
+            jaxmpp.getProperties().setUserProperty(SessionObject.RESOURCE, RESOURCE);
+
+            jaxmpp.getEventBus().addHandler(JaxmppCore.ConnectedHandler.ConnectedEvent.class, sessionObject -> latch.advance());
+            jaxmpp.getModulesManager().register(new PresenceHandler(jaxmpp, liveSubscribers));
+
+            jaxmpp.getEventBus().addHandler(MucModule.MucMessageReceivedHandler.MucMessageReceivedEvent.class, (sessionObject, message, room, s, date) -> {
+                try {
+                    logger.info("Group: " + message.getAsString());
+                    latch.advance();
+                } catch (XMLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            jaxmpp.getEventBus().addHandler(PresenceModule.ContactAvailableHandler.ContactAvailableEvent.class,
+                    (sessionObject, presence, jid, show, s, integer) -> System.out.println(jid + " available with message " + presence.getStatus()));
+            logger.info("Logged in");
         }
-
-        latch.state(2, 1);
-        System.out.println("Registration phase passed");
-
-        jaxmpp.getSessionObject().setProperty(InBandRegistrationModule.IN_BAND_REGISTRATION_MODE_KEY, Boolean.FALSE);
-        jaxmpp.getProperties().setUserProperty(SessionObject.USER_BARE_JID, jid);
-        jaxmpp.getProperties().setUserProperty(SessionObject.PASSWORD, password);
-        jaxmpp.getProperties().setUserProperty(SessionObject.RESOURCE, "java-client");
-
-        jaxmpp.getEventBus().addHandler(JaxmppCore.ConnectedHandler.ConnectedEvent.class, sessionObject -> latch.advance());
-        jaxmpp.getModulesManager().register(new AbstractStanzaModule<Message>() {
-            @Override
-            public Criteria getCriteria() {
-                return new ElementCriteria("message", new String[0], new String[0]);
-            }
-
-            @Override
-            public String[] getFeatures() {
-                return new String[0];
-            }
-
-            @Override
-            public void process(Message stanza) throws JaxmppException {
-                //onMessage(stanza);
-            }
-        });
-
-        jaxmpp.getEventBus().addHandler(MucModule.MucMessageReceivedHandler.MucMessageReceivedEvent.class, (sessionObject, message, room, s, date) -> {
-            try {
-                System.out.println("Group: " + message.getAsString());
-                latch.advance();
-            } catch (XMLException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        jaxmpp.getEventBus().addHandler(PresenceModule.ContactAvailableHandler.ContactAvailableEvent.class,
-                (sessionObject, presence, jid, show, s, integer) -> System.out.println(jid + " available with message " + presence.getStatus()));
-
-        System.out.println("Logged in");
 
         registered = true;
         online();
-
-        try {
-            final Message message = Message.createMessage();
-            message.setFrom(JID.jidInstance(jid));
-            message.setTo(JID.jidInstance(BareJID.bareJIDInstance("marnikitta", domain)));
-            message.setBody("hello");
-            jaxmpp.send(message);
-        } catch (JaxmppException e) {
-            throw new RuntimeException(e);
-        }
-
     }
 
     public void online() {
@@ -156,24 +135,51 @@ public class JabberClient {
         if (!registered) {
             start();
         } else {
-            final Presence stanza;
             try {
-                stanza = Presence.create();
-
                 jaxmpp.login();
                 latch.state(2, 1);
-                jaxmpp.send(stanza);
-                System.out.println("Online presence sent");
+                jaxmpp.send(Presence.create());
+                logger.info("Online presence sent");
             } catch (JaxmppException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public static class PrinterAsyncCallback implements AsyncCallback {
-        private final String name;
+    public void offline() {
+        if (jaxmpp.isConnected()) {
+            final JaxmppCore.DisconnectedHandler disconnectedHandler = sessionObject -> latch.advance();
+            jaxmpp.getEventBus().addHandler(JaxmppCore.DisconnectedHandler.DisconnectedEvent.class, disconnectedHandler);
+            try {
+                jaxmpp.disconnect();
+            } catch (JaxmppException e) {
+                throw new RuntimeException(e);
+            }
 
-        private StateLatch lock;
+            latch.state(2, 1);
+            jaxmpp.getEventBus().remove(disconnectedHandler);
+            logger.info("Sent offline presence");
+        }
+    }
+
+    public void send(String text) {
+        online();
+        liveSubscribers.forEach(subscriber -> {
+            try {
+                final Message message = Message.createMessage();
+                message.setFrom(jid);
+                message.setTo(subscriber);
+                message.setBody(text);
+                jaxmpp.send(message);
+            } catch (JaxmppException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private static class PrinterAsyncCallback implements AsyncCallback {
+        private final String name;
+        private final StateLatch lock;
 
         PrinterAsyncCallback(String name, StateLatch lock) {
             this.name = name;
@@ -181,17 +187,17 @@ public class JabberClient {
         }
 
         public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-            System.out.println("Error [" + name + "]: " + error + " [" + responseStanza.getAsString() + "]");
+            logger.info("Error [" + name + "]: " + error + " [" + responseStanza.getAsString() + "]");
             transactionComplete();
         }
 
         public void onSuccess(Stanza responseStanza) throws JaxmppException {
-            System.out.println("Response  [" + name + "]: " + responseStanza.getAsString());
+            logger.info("Response  [" + name + "]: " + responseStanza.getAsString());
             transactionComplete();
         }
 
-        public void onTimeout() throws JaxmppException {
-            System.out.println("Timeout " + name);
+        public void onTimeout() {
+            logger.info("Timeout " + name);
             transactionComplete();
         }
 
@@ -200,8 +206,41 @@ public class JabberClient {
         }
     }
 
-    public static void main(String[] args) {
-        final JabberClient client = new JabberClient("tomat", "dani-da-latitude", "password");
-        client.start();
+    private static class PresenceHandler extends AbstractStanzaModule<Presence> {
+        private final Jaxmpp jaxmpp;
+        private final Set<JID> liveSubscribers;
+
+        private PresenceHandler(Jaxmpp jaxmpp, Set<JID> liveSubscribers) {
+            this.jaxmpp = jaxmpp;
+            this.liveSubscribers = liveSubscribers;
+        }
+
+        @Override
+        public Criteria getCriteria() {
+            return new ElementCriteria("message", new String[0], new String[0]);
+        }
+
+        @Override
+        public String[] getFeatures() {
+            return new String[0];
+        }
+
+        @Override
+        public void process(Presence presence) {
+            try {
+                if (presence.getType() == StanzaType.subscribe) {
+                    final Presence stanza = Presence.create();
+                    stanza.setType(StanzaType.subscribed);
+                    stanza.setTo(presence.getFrom());
+                    jaxmpp.send(stanza);
+                } else if (presence.getType() == StanzaType.unavailable) {
+                    liveSubscribers.remove(presence.getFrom());
+                } else {
+                    liveSubscribers.add(presence.getFrom());
+                }
+            } catch (JaxmppException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
