@@ -3,7 +3,6 @@ package com.expleague.server.services;
 import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import com.expleague.server.XMPPServerApplication;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.roster.RosterQuery;
 import com.expleague.xmpp.model.stanza.Iq;
@@ -143,7 +142,10 @@ public class RosterService extends AbstractActor {
   }
 
   private void getSubscribers(JID requester) {
-    final List<JID> collect = roster.items(requester.local()).map(RosterItem::jid).collect(Collectors.toList());
+    final List<JID> collect = roster.items(requester.local())
+      .filter(i -> i.subscription() == Subscription.TO || i.subscription() == Subscription.BOTH)
+      .map(RosterItem::jid)
+      .collect(Collectors.toList());
     sender().tell(collect, self());
   }
 }
