@@ -3,6 +3,7 @@ package com.expleague.server.services;
 import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import com.expleague.server.XMPPServerApplication;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.roster.RosterQuery;
 import com.expleague.xmpp.model.stanza.Iq;
@@ -84,7 +85,12 @@ public class RosterService extends AbstractActor {
   private void rosterPush(JID jid) {
     final List<RosterItem> rosterItems = roster.items(jid.local()).collect(Collectors.toList());
     final RosterQuery query = new RosterQuery(rosterItems);
-    final Iq<RosterQuery> rosterQueryIq = Iq.create(jid, null, Iq.IqType.SET, query);
+    final Iq<RosterQuery> rosterQueryIq = Iq.create(
+      jid,
+      JID.parse(XMPPServerApplication.config().domain()),
+      Iq.IqType.SET,
+      query
+    );
     context().parent().tell(rosterQueryIq, self());
   }
 

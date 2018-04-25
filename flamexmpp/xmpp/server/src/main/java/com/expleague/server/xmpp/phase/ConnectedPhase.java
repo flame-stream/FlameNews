@@ -71,6 +71,15 @@ public class ConnectedPhase extends XMPPPhase {
     answer(new Features(new Bind()));
   }
 
+  /**
+   * All stanzas originated at server including responses from services
+   * MUST have {@code from} attribute in format {@code domainpart}
+   *
+   * All stanzas directed to client
+   * MUST have {@code to} attribute set to full (user@domain/resource) JID
+   *
+   * This is done so we can differentiate incoming and outgoing stanzas
+   */
   private void onStanza(Stanza stanza) throws ExecutionException, InterruptedException {
     if (stanza.from() == null) {
       stanza.from(jid);
@@ -93,7 +102,7 @@ public class ConnectedPhase extends XMPPPhase {
       }
     }
 
-    if (jid.bareEq(stanza.to())) {
+    if (jid.equals(stanza.to())) {
       // incoming
       answer(stanza);
     } else {
