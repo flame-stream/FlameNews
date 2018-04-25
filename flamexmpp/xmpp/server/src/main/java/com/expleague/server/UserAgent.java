@@ -97,12 +97,15 @@ public class UserAgent extends AbstractActor {
     final ActorRef connection;
 
     if (resource.isEmpty() || !connections.containsKey(resource)) {
-      connection = connections.values()
+      final String r = connections.keySet()
         .stream()
         .findFirst()
         .orElseThrow(() -> new IllegalStateException("There should be at least one connection"));
+      connection = connections.get(r);
+      stanza.to(bare.resource(r));
     } else {
       connection = connections.get(resource);
+      stanza.to(bare.resource(resource));
     }
 
     connection.forward(stanza, context());

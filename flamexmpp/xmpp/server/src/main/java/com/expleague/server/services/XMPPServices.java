@@ -35,7 +35,6 @@ public class XMPPServices extends AbstractActor {
   }
 
   private void onIq(Iq<?> iq) {
-    // TODO: 4/15/18 Return proper roster
     final String ns = iq.serviceNS();
     if (knownServices.containsKey(ns)) {
       final ActorRef service = knownServices.get(iq.serviceNS());

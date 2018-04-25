@@ -44,10 +44,10 @@ public class XMPP extends AbstractActor {
   }
 
   private void onIq(Iq<?> iq) {
-    if (iq.isBroadcast() || iq.to().bareEq(hostJID)) {
-      services.forward(iq, context());
-    } else {
+    if (iq.to() != null && iq.to().hasResource()) {
       findOrAllocate(iq.to()).forward(iq, context());
+    } else {
+      services.forward(iq, context());
     }
   }
 

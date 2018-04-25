@@ -87,7 +87,7 @@ public class RosterService extends AbstractActor {
     final RosterQuery query = new RosterQuery(rosterItems);
     final Iq<RosterQuery> rosterQueryIq = Iq.create(
       jid,
-      JID.parse(XMPPServerApplication.config().domain()),
+      null,
       Iq.IqType.SET,
       query
     );
