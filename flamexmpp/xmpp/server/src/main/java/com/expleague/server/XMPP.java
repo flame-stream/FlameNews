@@ -72,6 +72,7 @@ public class XMPP extends AbstractActor {
         });
     } else if (presence.type() == PresenceType.SUBSCRIBED || presence.type() == PresenceType.UNSUBSCRIBED) {
       roster.tell(presence, self());
+      findOrAllocate(presence.to()).forward(presence, context());
     } else {
       findOrAllocate(presence.to()).forward(presence, context());
     }

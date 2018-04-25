@@ -36,9 +36,7 @@ public class UserAgent extends AbstractActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
       .match(ConnStatus.class, this::onStatus)
-      .match(Message.class, this::onMessage)
-      .match(Iq.class, this::onIq)
-      .match(Presence.class, this::onPresence)
+      .match(Stanza.class, this::deliverStanza)
       .build();
   }
 
@@ -55,44 +53,14 @@ public class UserAgent extends AbstractActor {
     }
   }
 
-  private void onPresence(Presence presence) {
-    if (!presence.from().bareEq(presence.from())) {
-      connections.values().forEach(c -> c.forward(presence, context()));
-    }
-  }
-
-  private void onIq(Iq<?> iq) {
-    if (!online()) {
-      final Iq<Err> error = Iq.answer(iq, new Err(
-          Err.Cause.SERVICE_UNAVAILABLE,
-          Err.ErrType.CANCEL,
-          "User is offline or doesn't exists"
-        )
-      );
-      error.id(iq.id());
-      sender().tell(error, self());
-      return;
-    }
-
-    deliverStanza(iq);
-  }
-
-  private void onMessage(Message message) {
-    if (!online()) {
-      final Message error = new Message(
-        bare,
-        message.from(),
-        new Err(Err.Cause.SERVICE_UNAVAILABLE, Err.ErrType.CANCEL, "User is offline or doesn't exists")
-      );
-      error.id(message.id());
-      sender().tell(error, self());
-      return;
-    }
-
-    deliverStanza(message);
-  }
-
   private void deliverStanza(Stanza stanza) {
+    if (!online()) {
+      log.info("User is offline, discarding stanza. id = '"
+        + (stanza.id() == null ? "null" : stanza.id())
+        + "'");
+      return;
+    }
+
     final String resource = stanza.to().resource();
     final ActorRef connection;
 
