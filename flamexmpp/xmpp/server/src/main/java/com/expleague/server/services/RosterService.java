@@ -34,7 +34,8 @@ public class RosterService extends AbstractActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-      .match(Iq.class, this::onIq)
+      .match(Iq.class, iq -> iq.type() == Iq.IqType.SET, this::onSet)
+      .match(Iq.class, iq -> iq.type() == Iq.IqType.GET, this::onGet)
       .match(JID.class, this::getSubscribers)
       .match(
         Presence.class,
@@ -44,46 +45,44 @@ public class RosterService extends AbstractActor {
       .build();
   }
 
-  private void onIq(Iq<RosterQuery> rosterIq) {
-    if (rosterIq.to() != null) {
-      log.warning("Requests to roster must not include 'to' attribute");
+  private void onGet(Iq<RosterQuery> rosterIq) {
+    final List<RosterItem> items = roster.items(rosterIq.from().local())
+      .collect(Collectors.toList());
+    sender().tell(Iq.answer(rosterIq, new RosterQuery(items)), self());
+  }
+
+  private void onSet(Iq<RosterQuery> setQuery) {
+    final RosterItem item = setQuery.get().items().get(0);
+    if (item == null) {
+      log.warning("Query must contain exactly one item");
+      return;
     }
 
-    switch (rosterIq.type()) {
-      case GET:
-        final List<RosterItem> items = roster.items(rosterIq.from().local())
-          .collect(Collectors.toList());
-        sender().tell(Iq.answer(rosterIq, new RosterQuery(items)), self());
-        break;
-      case SET:
-        final RosterItem item = rosterIq.get().items().get(0);
-        if (item == null) {
-          log.warning("Query must contain exactly one item");
-          return;
-        }
+    if (item.subscription() == Subscription.REMOVE) {
+      log.fine("Removing roster item: local='" + setQuery + "'" + ", contact='" + item.jid() + ";");
 
-        if (item.subscription() == Subscription.REMOVE) {
-          log.fine("Removing roster item: local='" + rosterIq + "'" + ", contact='" + item.jid() + ";");
-          roster.remove(rosterIq.from().local(), item.jid().bare());
+      if (roster.item(setQuery.from().local(), item.jid().bare()) != null) {
+        roster.remove(setQuery.from().local(), item.jid().bare());
 
-          sender().tell(Iq.answer(rosterIq), self());
-          rosterPush(rosterIq.from(), new RosterItem(item.jid().bare(), Subscription.REMOVE));
-        } else {
-          final RosterItem existingItem = roster.item(rosterIq.from().local(), item.jid().bare());
-          if (existingItem == null) {
-            log.fine("Creating new roster item: local='" + rosterIq + "'" + ", contact='" + item.jid() + ";");
-            roster.create(rosterIq.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
+        sender().tell(Iq.answer(setQuery), self());
+        rosterPush(setQuery.from(), new RosterItem(item.jid().bare(), Subscription.REMOVE));
+      }
+    } else {
+      // Ignore other kinds of subscription
 
-            sender().tell(Iq.answer(rosterIq), self());
-            rosterPush(rosterIq.from(), new RosterItem(item.jid().bare(), Subscription.NONE));
-          } else {
-            // There is nothing to change. Yet :)
-            // No name, no group
-            sender().tell(Iq.answer(rosterIq), self());
-            rosterPush(rosterIq.from(), existingItem);
-          }
-        }
-        break;
+      final RosterItem existingItem = roster.item(setQuery.from().local(), item.jid().bare());
+      if (existingItem == null) {
+        log.fine("Creating new roster item: local='" + setQuery + "'" + ", contact='" + item.jid() + ";");
+        roster.create(setQuery.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
+
+        sender().tell(Iq.answer(setQuery), self());
+        rosterPush(setQuery.from(), new RosterItem(item.jid().bare(), Subscription.NONE));
+      } else {
+        // There is nothing to change. Yet :)
+        // No name, no group
+        sender().tell(Iq.answer(setQuery), self());
+        rosterPush(setQuery.from(), existingItem);
+      }
     }
   }
 
