@@ -10,11 +10,11 @@ import com.expleague.xmpp.model.control.roster.RosterQuery;
 import com.expleague.xmpp.model.stanza.Iq;
 import com.expleague.xmpp.model.stanza.Presence;
 import com.expleague.xmpp.model.stanza.Presence.PresenceType;
+import com.expleague.xmpp.model.stanza.data.Err;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem;
@@ -37,8 +37,8 @@ public class RosterService extends AbstractActor {
   @Override
   public Receive createReceive() {
     return ReceiveBuilder.create()
-      .match(Iq.class, iq -> iq.type() == Iq.IqType.SET, this::onSet)
       .match(Iq.class, iq -> iq.type() == Iq.IqType.GET, this::onGet)
+      .match(Iq.class, iq -> iq.type() == Iq.IqType.SET, this::onSet)
       .match(JID.class, this::getSubscribers)
       .match(
         Presence.class,
@@ -56,86 +56,119 @@ public class RosterService extends AbstractActor {
 
   private void onSet(Iq<RosterQuery> setQuery) {
     final RosterItem item = setQuery.get().items().get(0);
+
     if (item == null) {
       log.warning("Query must contain exactly one item");
       return;
     }
 
     if (item.subscription() == Subscription.REMOVE) {
-      log.debug("Removing roster item: local='{}', contact='{}'", setQuery.from(), item.jid());
-
-      if (roster.item(setQuery.from().local(), item.jid().bare()) != null) {
-        roster.remove(setQuery.from().local(), item.jid().bare());
-
-        sender().tell(Iq.answer(setQuery), self());
-        rosterPush(setQuery.from(), new RosterItem(item.jid().bare(), Subscription.REMOVE));
-      }
+      remove(setQuery);
     } else {
+      final JID requester = setQuery.from();
       // Ignore other kinds of subscription
 
-      final RosterItem existingItem = roster.item(setQuery.from().local(), item.jid().bare());
+      final RosterItem existingItem = roster.item(requester.local(), item.jid().bare());
       if (existingItem == null) {
-        log.debug("Creating new roster item: local='{}', contact='{}'", setQuery.from(), item.jid());
-        roster.create(setQuery.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
+        log.debug("Creating new roster item: local='{}', contact='{}'", requester, item.jid());
+        roster.create(requester.local(), new RosterItem(item.jid().bare(), Subscription.NONE));
 
         sender().tell(Iq.answer(setQuery), self());
-        rosterPush(setQuery.from(), new RosterItem(item.jid().bare(), Subscription.NONE));
+        rosterPush(requester, new RosterItem(item.jid().bare(), Subscription.NONE));
       } else {
         // There is nothing to change. Yet :)
         // No name, no group
         sender().tell(Iq.answer(setQuery), self());
-        rosterPush(setQuery.from(), existingItem);
+        rosterPush(requester, existingItem);
       }
     }
   }
 
   private void onSubscription(Presence presence) {
-    // There is a roster per user. NOT PER RESOURCE
-    // Subscriptions are also on users, not resources
-
     final JID contact = presence.from().bare();
     final JID requester = presence.to().bare();
 
-    @Nullable final RosterItem requesterView = roster.item(requester.local(), contact);
-    @Nullable final RosterItem contactView = roster.item(contact.local(), requester);
-
     switch (presence.type()) {
       case SUBSCRIBED:
-        if (requesterView == null) {
-          roster.create(requester.local(), new RosterItem(contact, Subscription.TO));
-        } else if (requesterView.subscription() == Subscription.NONE) {
-          roster.update(requester.local(), new RosterItem(contact, Subscription.TO));
-        } else if (requesterView.subscription() == Subscription.FROM) {
-          roster.update(requester.local(), new RosterItem(contact, Subscription.BOTH));
-        }
-
-        if (contactView == null) {
-          roster.create(contact.local(), new RosterItem(requester, Subscription.FROM));
-        } else if (contactView.subscription() == Subscription.NONE) {
-          roster.update(contact.local(), new RosterItem(requester, Subscription.FROM));
-        } else if (contactView.subscription() == Subscription.TO) {
-          roster.update(contact.local(), new RosterItem(requester, Subscription.BOTH));
-        }
+        subscribe(contact, requester);
         break;
       case UNSUBSCRIBED:
-        if (requesterView == null) {
-          throw new IllegalStateException("Before unsubscribe there should be a subscription");
-        }
-
-        if (requesterView.subscription() == Subscription.TO) {
-          roster.remove(requester.local(), contact);
-        } else if (requesterView.subscription() == Subscription.BOTH) {
-          roster.update(requester.local(), new RosterItem(contact, Subscription.FROM));
-        }
-
-        if (contactView.subscription() == Subscription.FROM) {
-          roster.update(contact.local(), new RosterItem(requester, Subscription.NONE));
-        } else if (contactView.subscription() == Subscription.BOTH) {
-          roster.update(contact.local(), new RosterItem(requester, Subscription.TO));
-        }
+        unsubscribe(contact, requester);
         break;
     }
     rosterPush(presence.to(), roster.item(requester.local(), contact));
+  }
+
+  private void subscribe(JID requester, JID contact) {
+    @Nullable final RosterItem requesterView = roster.item(requester.local(), contact);
+    @Nullable final RosterItem contactView = roster.item(contact.local(), requester);
+
+    if (requesterView == null) {
+      roster.create(requester.local(), new RosterItem(contact, Subscription.TO));
+    } else if (requesterView.subscription() == Subscription.NONE) {
+      roster.update(requester.local(), new RosterItem(contact, Subscription.TO));
+    } else if (requesterView.subscription() == Subscription.FROM) {
+      roster.update(requester.local(), new RosterItem(contact, Subscription.BOTH));
+    }
+
+    if (contactView == null) {
+      roster.create(contact.local(), new RosterItem(requester, Subscription.FROM));
+    } else if (contactView.subscription() == Subscription.NONE) {
+      roster.update(contact.local(), new RosterItem(requester, Subscription.FROM));
+    } else if (contactView.subscription() == Subscription.TO) {
+      roster.update(contact.local(), new RosterItem(requester, Subscription.BOTH));
+    }
+  }
+
+  private void unsubscribe(JID requester, JID contact) {
+    @Nullable final RosterItem requesterView = roster.item(requester.local(), contact);
+    @Nullable final RosterItem contactView = roster.item(contact.local(), requester);
+
+    if (requesterView == null) {
+      // do nothing
+    } else if (requesterView.subscription() == Subscription.TO) {
+      roster.remove(requester.local(), contact);
+    } else if (requesterView.subscription() == Subscription.BOTH) {
+      roster.update(requester.local(), new RosterItem(contact, Subscription.FROM));
+    }
+
+    if (contactView == null) {
+      // do nothing
+    } else if (contactView.subscription() == Subscription.FROM) {
+      roster.update(contact.local(), new RosterItem(requester, Subscription.NONE));
+    } else if (contactView.subscription() == Subscription.BOTH) {
+      roster.update(contact.local(), new RosterItem(requester, Subscription.TO));
+    }
+  }
+
+  private void remove(Iq<RosterQuery> setQuery) {
+    final JID contact = setQuery.get().items().get(0).jid();
+    final JID requester = setQuery.from();
+    final RosterItem item = roster.item(requester.local(), contact.bare());
+
+    log.debug("Removing roster item: local='{}', contact='{}'", requester, contact.bare());
+
+    if (item == null) {
+      sender().tell(
+        Iq.answer(setQuery, new Err(Err.Cause.ITEM_NOT_FOUND, Err.ErrType.MODIFY, "No such element")),
+        self()
+      );
+      return;
+    }
+
+    roster.remove(requester.local(), contact.bare());
+    sender().tell(Iq.answer(setQuery), self());
+    rosterPush(requester, new RosterItem(contact.bare(), Subscription.REMOVE));
+
+    if (item.subscription() == Subscription.TO || item.subscription() == Subscription.BOTH) {
+      unsubscribe(requester.bare(), contact.bare());
+      context().parent().tell(new Presence(requester.bare(), contact.bare(), PresenceType.UNSUBSCRIBE), self());
+    }
+
+    if (item.subscription() == Subscription.FROM || item.subscription() == Subscription.BOTH) {
+      unsubscribe(contact.bare(), requester.bare());
+      context().parent().tell(new Presence(requester.bare(), contact.bare(), PresenceType.UNSUBSCRIBED), self());
+    }
   }
 
   private void rosterPush(JID jid, RosterItem item) {

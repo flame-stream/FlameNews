@@ -106,6 +106,8 @@ public class Err extends Item {
     CONFLICT,
     NOT_ALLOWED,
     SERVICE_UNAVAILABLE,
+    NOT_ACCEPTABLE,
+    ITEM_NOT_FOUND,
     INTERNAL_SERVER_ERROR;
     public static class CauseAdapter extends XmlAdapter<JAXBElement<?>, Cause> {
       @Override

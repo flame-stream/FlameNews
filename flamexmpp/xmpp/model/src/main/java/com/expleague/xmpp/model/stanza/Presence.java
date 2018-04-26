@@ -85,6 +85,12 @@ public class Presence extends Stanza implements AnyHolder {
 
   public Presence() {}
 
+  public Presence(JID from, JID to, PresenceType type) {
+    this.from = from;
+    this.to = to;
+    this.type = type;
+  }
+
   public Presence(JID from, boolean available) {
     this.from = from;
     type = available ? PresenceType.AVAILABLE : PresenceType.UNAVAILABLE;
