@@ -2,6 +2,8 @@ package com.expleague.server.services;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.roster.RosterQuery;
@@ -24,7 +26,8 @@ import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem.Sub
  * Time: 13:54
  */
 public class RosterService extends AbstractActor {
-  private static final Logger log = Logger.getLogger(RosterService.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
+
   private final Roster roster = new Roster.InMemRoster();
 
   public static Props props() {
@@ -59,7 +62,7 @@ public class RosterService extends AbstractActor {
     }
 
     if (item.subscription() == Subscription.REMOVE) {
-      log.fine("Removing roster item: local='" + setQuery + "'" + ", contact='" + item.jid() + ";");
+      log.debug("Removing roster item: local='{}', contact='{}'", setQuery.from(), item.jid());
 
       if (roster.item(setQuery.from().local(), item.jid().bare()) != null) {
         roster.remove(setQuery.from().local(), item.jid().bare());
@@ -72,7 +75,7 @@ public class RosterService extends AbstractActor {
 
       final RosterItem existingItem = roster.item(setQuery.from().local(), item.jid().bare());
       if (existingItem == null) {
-        log.fine("Creating new roster item: local='" + setQuery + "'" + ", contact='" + item.jid() + ";");
+        log.debug("Creating new roster item: local='{}', contact='{}'", setQuery.from(), item.jid());
         roster.create(setQuery.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
 
         sender().tell(Iq.answer(setQuery), self());

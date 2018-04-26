@@ -36,14 +36,8 @@ public class XMPPServerApplication {
   }
 
   @VisibleForTesting
-  public static void setConfig(Cfg cfg) throws Exception {
+  public static void setConfig(Cfg cfg) {
     config = cfg;
-    if (System.getProperty("logger.config") == null) {
-      LogManager.getLogManager()
-        .readConfiguration(XMPPServerApplication.class.getResourceAsStream("/logging.properties"));
-    } else {
-      LogManager.getLogManager().readConfiguration(new FileInputStream(System.getProperty("logger.config")));
-    }
   }
 
   public interface Cfg {

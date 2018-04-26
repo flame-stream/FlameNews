@@ -1,6 +1,8 @@
 package com.expleague.server.xmpp;
 
 import akka.util.ByteString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -8,7 +10,6 @@ import javax.net.ssl.SSLException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * User: solar
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
  * Time: 22:01
  */
 public class SSLHelper {
-  private static final Logger log = Logger.getLogger(SSLHelper.class.getName());
+  private final Logger log = LoggerFactory.getLogger(SSLHelper.class);
   private final SSLEngine sslEngine;
   private final SSLDirection in;
   private final SSLDirection out;
@@ -45,8 +46,7 @@ public class SSLHelper {
       if (incoming) {
         dst = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
         src = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-      }
-      else {
+      } else {
         src = ByteBuffer.allocate(sslEngine.getSession().getApplicationBufferSize());
         dst = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
       }
@@ -62,8 +62,9 @@ public class SSLHelper {
             slice.limit(src.remaining());
             inBuffer.position(inBuffer.position() + slice.limit());
             src.put(slice);
+          } else {
+            src.put(inBuffer);
           }
-          else src.put(inBuffer);
 
           while (true) {
             src.flip();
@@ -77,25 +78,26 @@ public class SSLHelper {
               case BUFFER_OVERFLOW:
                 continue;
               default:
-                if (r.bytesConsumed() != 0 || r.bytesProduced() != 0)
+                if (r.bytesConsumed() != 0 || r.bytesProduced() != 0) {
                   continue;
+                }
             }
             break;
           }
         }
-      }
-      catch (SSLException e) {
-        log.log(Level.WARNING, "SSL exception caught, closing connection", e);
+      } catch (SSLException e) {
+        log.error("SSL exception caught, closing connection", e);
         consumer.accept(null);
       }
-//      finally {
-//        log.finest((incoming ? "Incoming" : "Outgoing") + " stream received: " + msgIn.length() + " sent: " + sent);
-//      }
+      //      finally {
+      //        log.finest((incoming ? "Incoming" : "Outgoing") + " stream received: " + msgIn.length() + " sent: " + sent);
+      //      }
     }
 
     private int sendChunk(Consumer<ByteString> consumer) {
-      if (dst.position() == 0)
+      if (dst.position() == 0) {
         return 0;
+      }
       dst.flip();
       int result = dst.limit();
       consumer.accept(ByteString.fromByteBuffer(dst));

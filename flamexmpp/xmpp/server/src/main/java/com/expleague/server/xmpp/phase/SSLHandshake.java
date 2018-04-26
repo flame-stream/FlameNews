@@ -3,6 +3,8 @@ package com.expleague.server.xmpp.phase;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.japi.pf.ReceiveBuilder;
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
  * Time: 21:17
  */
 public class SSLHandshake extends AbstractActor {
-  private static final Logger log = Logger.getLogger(SSLHandshake.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final SSLEngine sslEngine;
   private final ActorRef connection;
 
@@ -115,7 +117,7 @@ public class SSLHandshake extends AbstractActor {
               in.compact();
             } else {
               out = expandBuffer(out, sslEngine.getSession().getApplicationBufferSize());
-              log.info("Unwrap buffer overflow. Pos:" + in.position());
+              log.info("Unwrap buffer overflow. Pos: {}", in.position());
             }
             break;
           case NEED_WRAP:
@@ -133,7 +135,7 @@ public class SSLHandshake extends AbstractActor {
         }
       }
     } catch (SSLException e) {
-      log.log(Level.WARNING, "Error during handshake, shutting down connection", e);
+      log.error(e, "Error during handshake, shutting down connection");
       sender().tell(XMPPClientConnection.ConnectionState.CLOSED, self());
     }
   }

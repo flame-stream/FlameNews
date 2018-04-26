@@ -37,6 +37,7 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-http_2.11</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative</artifactId>
@@ -50,10 +51,25 @@
             <groupId>org.scala-lang.modules</groupId>
             <artifactId>scala-java8-compat_2.11</artifactId>
         </dependency>
+
+        <!--Logging-->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-slf4j_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.relayrides</groupId>
             <artifactId>pushy</artifactId>

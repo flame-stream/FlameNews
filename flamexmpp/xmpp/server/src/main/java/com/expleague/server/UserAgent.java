@@ -3,6 +3,8 @@ package com.expleague.server;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.stanza.Presence;
@@ -10,10 +12,9 @@ import com.expleague.xmpp.model.stanza.Stanza;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class UserAgent extends AbstractActor {
-  private static final Logger log = Logger.getLogger(UserAgent.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final ActorRef xmpp;
   private final JID bare;
 
@@ -44,7 +45,7 @@ public class UserAgent extends AbstractActor {
     } else {
       connections.remove(status.resource);
       if (connections.isEmpty()) {
-        log.fine("All connections are closed, stopping user agent");
+        log.debug("All connections are closed, stopping user agent");
         xmpp.tell(new Presence(bare, false), self());
         context().stop(self());
       }
@@ -60,9 +61,7 @@ public class UserAgent extends AbstractActor {
 
   private void deliverStanza(Stanza stanza) {
     if (!online()) {
-      log.info("User is offline, discarding stanza. id = '"
-        + (stanza.id() == null ? "null" : stanza.id())
-        + "'");
+      log.info("User is offline, discarding stanza. id = '{}'", stanza.id() == null ? "null" : stanza.id());
       return;
     }
 

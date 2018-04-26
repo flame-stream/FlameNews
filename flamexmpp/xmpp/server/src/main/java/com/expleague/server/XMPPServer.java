@@ -3,6 +3,8 @@ package com.expleague.server;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.io.TcpSO;
@@ -19,7 +21,7 @@ import java.util.logging.Logger;
  * Time: 14:47
  */
 public class XMPPServer extends AbstractActor {
-  private static final Logger log = Logger.getLogger(XMPPServer.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final ActorRef xmpp;
 
   public XMPPServer(ActorRef xmpp) {
@@ -53,7 +55,7 @@ public class XMPPServer extends AbstractActor {
   }
 
   private void onTcp(Tcp.Event msg) {
-    log.fine(String.valueOf(msg));
+    log.debug(String.valueOf(msg));
     if (msg instanceof Tcp.CommandFailed) {
       context().stop(self());
     } else if (msg instanceof Tcp.Connected) {

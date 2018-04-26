@@ -6,6 +6,8 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.actor.Terminated;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.japi.pf.ReceiveBuilder;
@@ -51,8 +53,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * User: solar
@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings("unused")
 public class XMPPClientConnection extends AbstractActor {
-  private static final Logger log = Logger.getLogger(XMPPClientConnection.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private static boolean unitTestEnabled = true;
 
   private final ActorRef xmpp;
@@ -136,7 +136,7 @@ public class XMPPClientConnection extends AbstractActor {
 
     final byte[] copy = new byte[data.length()];
     data.asByteBuffer().get(copy);
-    log.finest(">" + new String(copy, StreamTools.UTF));
+    log.debug("> " + new String(copy, StreamTools.UTF));
     try {
       asyncXml.getInputFeeder().feedInput(copy, 0, copy.length);
       if (!opened) {
@@ -149,7 +149,7 @@ public class XMPPClientConnection extends AbstractActor {
         }
       });
     } catch (XMLStreamException | SAXException e) {
-      log.log(Level.SEVERE, "Exception during message parsing", e);
+      log.error(e, "Exception during message parsing");
     }
   }
 
@@ -162,7 +162,7 @@ public class XMPPClientConnection extends AbstractActor {
       xml = item.xmlString(false);
     }
 
-    log.finest("<" + xml);
+    log.debug("< " + xml);
     final ByteString data = ByteString.fromString(xml);
     if (currentState != ConnectionState.HANDSHAKE && currentState != ConnectionState.STARTTLS) {
       helper.encrypt(data, this::output);
@@ -210,17 +210,17 @@ public class XMPPClientConnection extends AbstractActor {
   }
 
   private void onFailure(Status.Failure failure) {
-    log.log(Level.SEVERE, "Stream failure", failure.cause());
+    log.error(failure.cause(), "Stream failure");
     onConnectionState(ConnectionState.CLOSED);
   }
 
   private void onConnectionClosed(Tcp.ConnectionClosed ignore) {
-    log.fine("Client connection closed");
+    log.debug("Client connection closed");
     onConnectionState(ConnectionState.CLOSED);
   }
 
   private void onTerminated(Terminated who) {
-    log.finest("Terminated " + who.actor());
+    log.debug("Terminated {}", who.actor());
   }
 
   private ConnectionState currentState;
@@ -285,7 +285,7 @@ public class XMPPClientConnection extends AbstractActor {
           helper = new SSLHelper(sslEngine);
           newLogic = handshake;
         } catch (IOException | InterruptedException ioe) {
-          log.log(Level.SEVERE, "Unable to create SSL context", ioe);
+          log.error(ioe, "Unable to create SSL context");
         }
         break;
       }
@@ -322,8 +322,8 @@ public class XMPPClientConnection extends AbstractActor {
     opened = false;
     businessLogic = newLogic;
     currentState = state;
-    log.fine("Connection state changed to: " + state);
-    log.finest("BL changed to: " + (newLogic != null ? newLogic.path() : null));
+    log.debug("Connection state changed to: {}", state);
+    log.debug("BL changed to: {}", newLogic != null ? newLogic.path() : null);
   }
 
   private static SslContext getSslContextWithP12File(final File p12File, final String password) throws SSLException {

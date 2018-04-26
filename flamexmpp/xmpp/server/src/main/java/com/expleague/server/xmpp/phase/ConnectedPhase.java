@@ -2,6 +2,8 @@ package com.expleague.server.xmpp.phase;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import akka.util.Timeout;
@@ -27,7 +29,7 @@ import java.util.logging.Logger;
  * Time: 16:37
  */
 public class ConnectedPhase extends XMPPPhase {
-  private static final Logger log = Logger.getLogger(ConnectedPhase.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final ActorRef xmpp;
 
   private boolean bound = false;
@@ -52,7 +54,7 @@ public class ConnectedPhase extends XMPPPhase {
   public void postStop() {
     if (userAgent != null) {
       userAgent.tell(new UserAgent.ConnStatus(false, jid.resource()), self());
-      log.fine("Connection to " + jid + " is now closed");
+      log.debug("Connection to {} is now closed", jid);
     }
   }
 
@@ -82,7 +84,7 @@ public class ConnectedPhase extends XMPPPhase {
    */
   private void onStanza(Stanza stanza) throws ExecutionException, InterruptedException {
     if (!bound && !tryBind(stanza)) {
-      log.warning("There shouldn't be any messages before bind. Got " + stanza);
+      log.warning("There shouldn't be any messages before bind. Got {}", stanza);
       return;
     }
 

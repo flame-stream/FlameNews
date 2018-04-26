@@ -3,6 +3,8 @@ package com.expleague.server;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
 import com.expleague.server.services.RosterService;
@@ -18,7 +20,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 public class XMPP extends AbstractActor {
-  private static final Logger log = Logger.getLogger(XMPP.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final JID hostJID = JID.parse(XMPPServerApplication.config().domain());
 
   private final ActorRef services;
@@ -59,7 +61,7 @@ public class XMPP extends AbstractActor {
 
   private void onMessage(Message message) {
     if (message.to() == null) {
-      log.warning("Message without destination " + message);
+      log.warning("Message without destination {}", message);
       return;
     }
 

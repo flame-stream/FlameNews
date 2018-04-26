@@ -2,6 +2,8 @@ package com.expleague.server.xmpp.phase;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import com.expleague.server.xmpp.XMPPClientConnection;
 import com.expleague.xmpp.model.Features;
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings("unused")
 public class AuthorizationPhase extends XMPPPhase {
-  private static final Logger log = Logger.getLogger(AuthorizationPhase.class.getName());
+  private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final Mechanisms auth;
 
   private final Consumer<String> authorizedCallback;
@@ -74,13 +76,13 @@ public class AuthorizationPhase extends XMPPPhase {
         answer(Iq.answer(request, RegisterQuery.requiredFields()));
       } else if (request.type() == IqType.SET && !query.isEmpty()) {
         try {
-          log.fine("Registered: " + request);
+          log.info("Registered: {}", request);
           // TODO: 4/15/18  
           answer(Iq.answer(request));
         } catch (IllegalArgumentException integrity) {
           answer(Iq.answer(request, new Err(Err.Cause.CONFLICT, Err.ErrType.AUTH, integrity.getMessage())));
         } catch (Exception e) {
-          log.log(Level.FINEST, "Exception during user registration", e);
+          log.error(e, "Exception during user registration");
           answer(Iq.answer(request, new Err(Err.Cause.INTERNAL_SERVER_ERROR, Err.ErrType.AUTH, e.getMessage())));
         }
       }
@@ -119,7 +121,7 @@ public class AuthorizationPhase extends XMPPPhase {
         if (e.getCause() instanceof AuthenticationException) {
           answer(new Failure(Failure.Type.NOT_AUTHORIZED, e.getCause().getMessage()));
         } else {
-          log.log(Level.WARNING, "Exception during authorization", e);
+          log.error(e, "Exception during authorization");
           answer(new Failure(Failure.Type.NOT_AUTHORIZED, e.getMessage()));
         }
       }
