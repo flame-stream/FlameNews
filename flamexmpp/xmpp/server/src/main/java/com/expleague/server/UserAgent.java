@@ -5,11 +5,8 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.expleague.xmpp.model.JID;
-import com.expleague.xmpp.model.stanza.Iq;
-import com.expleague.xmpp.model.stanza.Message;
 import com.expleague.xmpp.model.stanza.Presence;
 import com.expleague.xmpp.model.stanza.Stanza;
-import com.expleague.xmpp.model.stanza.data.Err;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +33,7 @@ public class UserAgent extends AbstractActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
       .match(ConnStatus.class, this::onStatus)
+      .match(Presence.class, this::deliverPresence)
       .match(Stanza.class, this::deliverStanza)
       .build();
   }
@@ -51,6 +49,13 @@ public class UserAgent extends AbstractActor {
         context().stop(self());
       }
     }
+  }
+
+  private void deliverPresence(Presence presence) {
+    connections.forEach((resource, ref) -> {
+      final Stanza to = ((Presence) presence.copy()).to(bare.resource(resource));
+      ref.tell(to, sender());
+    });
   }
 
   private void deliverStanza(Stanza stanza) {

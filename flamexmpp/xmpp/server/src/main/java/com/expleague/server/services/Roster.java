@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 /**
@@ -20,7 +21,9 @@ public interface Roster {
 
   Stream<RosterItem> items(String local);
 
-  void createOrUpdate(String local, RosterItem item);
+  void create(String local, RosterItem item);
+
+  void update(String local, RosterItem item);
 
   void remove(String local, JID contact);
 
@@ -33,8 +36,22 @@ public interface Roster {
     }
 
     @Override
-    public void createOrUpdate(String local, RosterItem item) {
+    public void create(String local, RosterItem item) {
       roster.putIfAbsent(local, new HashMap<>());
+      if (roster.get(local).containsKey(item.jid())) {
+        throw new IllegalArgumentException("Item already exists, jid='" + item.jid() + "'");
+      }
+
+      roster.get(local).put(item.jid(), item);
+    }
+
+    @Override
+    public void update(String local, RosterItem item) {
+      roster.putIfAbsent(local, new HashMap<>());
+      if (!roster.get(local).containsKey(item.jid())) {
+        throw new NoSuchElementException("There is no item with jid='" + item.jid() + "'");
+      }
+
       roster.get(local).put(item.jid(), item);
     }
 

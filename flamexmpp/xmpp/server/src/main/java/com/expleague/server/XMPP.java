@@ -43,8 +43,14 @@ public class XMPP extends AbstractActor {
       .build();
   }
 
+  /**
+   * If there is no sender than iq is sent from the service to client (e.g., roster)
+   * If the destination is full JID (local@domain/resource) it is directed to client
+   *
+   * In all other cases the destination is the local service
+   */
   private void onIq(Iq<?> iq) {
-    if (iq.to() != null && iq.to().hasResource()) {
+    if (iq.from() == null || iq.to() != null && iq.to().hasResource()) {
       findOrAllocate(iq.to()).forward(iq, context());
     } else {
       services.forward(iq, context());

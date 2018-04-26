@@ -59,11 +59,11 @@ public class Stanza extends Item {
   }
 
   @Override
-  public <T extends Item> T copy(){
+  public <T extends Item> T copy() {
     return copy(null);
   }
 
-  public <T extends Item> T copy(@Nullable String idSuffix){
+  public <T extends Item> T copy(@Nullable String idSuffix) {
     final Stanza clone = super.copy();
 
     if (idSuffix == null)

@@ -58,43 +58,33 @@ public class RosterService extends AbstractActor {
       case SET:
         final RosterItem item = rosterIq.get().items().get(0);
         if (item == null) {
-          log.warning("Set query without item");
+          log.warning("Query must contain exactly one item");
           return;
         }
 
         if (item.subscription() == Subscription.REMOVE) {
+          log.fine("Removing roster item: local='" + rosterIq + "'" + ", contact='" + item.jid() + ";");
           roster.remove(rosterIq.from().local(), item.jid().bare());
+
           sender().tell(Iq.answer(rosterIq), self());
+          rosterPush(rosterIq.from(), new RosterItem(item.jid().bare(), Subscription.REMOVE));
         } else {
           final RosterItem existingItem = roster.item(rosterIq.from().local(), item.jid().bare());
           if (existingItem == null) {
-            roster.createOrUpdate(rosterIq.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
+            log.fine("Creating new roster item: local='" + rosterIq + "'" + ", contact='" + item.jid() + ";");
+            roster.create(rosterIq.from().local(), new RosterItem(item.jid().bare(), Subscription.NONE));
+
+            sender().tell(Iq.answer(rosterIq), self());
+            rosterPush(rosterIq.from(), new RosterItem(item.jid().bare(), Subscription.NONE));
           } else {
-            roster.createOrUpdate(
-              rosterIq.from().local(),
-              new RosterItem(item.jid().bare(), existingItem.subscription())
-            );
+            // There is nothing to change. Yet :)
+            // No name, no group
+            sender().tell(Iq.answer(rosterIq), self());
+            rosterPush(rosterIq.from(), existingItem);
           }
-
-          final RosterItem updatedItem = roster.item(rosterIq.from().local(), item.jid().bare());
-          sender().tell(Iq.answer(rosterIq, new RosterQuery(Collections.singleton(updatedItem))), self());
         }
-
-        rosterPush(rosterIq.from());
         break;
     }
-  }
-
-  private void rosterPush(JID jid) {
-    final List<RosterItem> rosterItems = roster.items(jid.local()).collect(Collectors.toList());
-    final RosterQuery query = new RosterQuery(rosterItems);
-    final Iq<RosterQuery> rosterQueryIq = Iq.create(
-      jid,
-      null,
-      Iq.IqType.SET,
-      query
-    );
-    context().parent().tell(rosterQueryIq, self());
   }
 
   private void onSubscription(Presence presence) {
@@ -109,16 +99,20 @@ public class RosterService extends AbstractActor {
 
     switch (presence.type()) {
       case SUBSCRIBED:
-        if (requesterView == null || requesterView.subscription() == Subscription.NONE) {
-          roster.createOrUpdate(requester.local(), new RosterItem(contact, Subscription.TO));
+        if (requesterView == null) {
+          roster.create(requester.local(), new RosterItem(contact, Subscription.TO));
+        } else if (requesterView.subscription() == Subscription.NONE) {
+          roster.update(requester.local(), new RosterItem(contact, Subscription.TO));
         } else if (requesterView.subscription() == Subscription.FROM) {
-          roster.createOrUpdate(requester.local(), new RosterItem(contact, Subscription.BOTH));
+          roster.update(requester.local(), new RosterItem(contact, Subscription.BOTH));
         }
 
-        if (contactView == null || contactView.subscription() == Subscription.NONE) {
-          roster.createOrUpdate(contact.local(), new RosterItem(requester, Subscription.FROM));
+        if (contactView == null) {
+          roster.create(contact.local(), new RosterItem(requester, Subscription.FROM));
+        } else if (contactView.subscription() == Subscription.NONE) {
+          roster.update(contact.local(), new RosterItem(requester, Subscription.FROM));
         } else if (contactView.subscription() == Subscription.TO) {
-          roster.createOrUpdate(contact.local(), new RosterItem(requester, Subscription.BOTH));
+          roster.update(contact.local(), new RosterItem(requester, Subscription.BOTH));
         }
         break;
       case UNSUBSCRIBED:
@@ -129,16 +123,28 @@ public class RosterService extends AbstractActor {
         if (requesterView.subscription() == Subscription.TO) {
           roster.remove(requester.local(), contact);
         } else if (requesterView.subscription() == Subscription.BOTH) {
-          roster.createOrUpdate(requester.local(), new RosterItem(contact, Subscription.FROM));
+          roster.update(requester.local(), new RosterItem(contact, Subscription.FROM));
         }
 
         if (contactView.subscription() == Subscription.FROM) {
-          roster.createOrUpdate(contact.local(), new RosterItem(requester, Subscription.NONE));
+          roster.update(contact.local(), new RosterItem(requester, Subscription.NONE));
         } else if (contactView.subscription() == Subscription.BOTH) {
-          roster.createOrUpdate(contact.local(), new RosterItem(requester, Subscription.TO));
+          roster.update(contact.local(), new RosterItem(requester, Subscription.TO));
         }
         break;
     }
+    rosterPush(presence.to(), roster.item(requester.local(), contact));
+  }
+
+  private void rosterPush(JID jid, RosterItem item) {
+    final RosterQuery query = new RosterQuery(Collections.singletonList(item));
+    final Iq<RosterQuery> rosterQueryIq = Iq.create(
+      jid,
+      null,
+      Iq.IqType.SET,
+      query
+    );
+    context().parent().tell(rosterQueryIq, self());
   }
 
   private void getSubscribers(JID requester) {
