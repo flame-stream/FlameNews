@@ -4,7 +4,6 @@ import com.expleague.xmpp.model.AnyHolder;
 import com.expleague.xmpp.model.Item;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.XMPPQuery;
-import com.expleague.xmpp.model.stanza.Iq;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAnyElement;

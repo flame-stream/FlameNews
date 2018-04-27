@@ -21,7 +21,6 @@ import scala.concurrent.duration.Duration;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * User: solar

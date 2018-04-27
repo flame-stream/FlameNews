@@ -4,8 +4,8 @@
  * Time: 16:09
  */
 @XmlSchema(
-    namespace = "urn:ietf:params:xml:ns:xmpp-tls",
-    xmlns = @XmlNs(prefix = "", namespaceURI = "urn:ietf:params:xml:ns:xmpp-tls")
+  namespace = "urn:ietf:params:xml:ns:xmpp-tls",
+  xmlns = @XmlNs(prefix = "", namespaceURI = "urn:ietf:params:xml:ns:xmpp-tls")
 )
 package com.expleague.xmpp.model.control.tls;
 

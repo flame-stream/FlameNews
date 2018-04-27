@@ -25,9 +25,9 @@ import javax.xml.namespace.QName;
 
 /**
  * <p>Java class for anonymous complex type.
- *
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- *
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -52,8 +52,6 @@ import javax.xml.namespace.QName;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- *
- *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "error", namespace = "urn:ietf:params:xml:ns:xmpp-stanzas")
@@ -109,6 +107,7 @@ public class Err extends Item {
     NOT_ACCEPTABLE,
     ITEM_NOT_FOUND,
     INTERNAL_SERVER_ERROR;
+
     public static class CauseAdapter extends XmlAdapter<JAXBElement<?>, Cause> {
       @Override
       public Cause unmarshal(JAXBElement<?> v) throws Exception {

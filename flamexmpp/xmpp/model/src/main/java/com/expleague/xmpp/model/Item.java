@@ -77,14 +77,12 @@ public class Item implements Cloneable {
   public static <T extends Item> T create(CharSequence str) {
     final XmlInputter inputter = tlReader.get();
     try {
-      return (T)inputter.deserialize(str.toString());
-    }
-    catch (Exception e) {
+      return (T) inputter.deserialize(str.toString());
+    } catch (Exception e) {
       inputter.init();
       try {
         return (T) inputter.deserialize(str.toString());
-      }
-      catch (Exception ee) {
+      } catch (Exception ee) {
         log.log(Level.WARNING, "Unable to parse message: " + str.toString(), ee);
         return null;
       }
@@ -95,8 +93,7 @@ public class Item implements Cloneable {
   public static <T extends Item> T createJson(CharSequence str, Class<T> clazz) {
     try {
       return tlObjectMapper.get().readValue(str.toString(), clazz);
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       log.log(Level.WARNING, "Unable to read item of type " + clazz.getName() + " from JSON", e);
     }
     return null;
@@ -107,8 +104,7 @@ public class Item implements Cloneable {
     final ObjectMapper mapper = tlObjectMapper.get();
     try {
       return mapper.writeValueAsString(this);
-    }
-    catch (JsonProcessingException e) {
+    } catch (JsonProcessingException e) {
       log.log(Level.WARNING, "Unable to convert item to JSON", e);
       return null;
     }
@@ -121,12 +117,12 @@ public class Item implements Cloneable {
   public String xmlString(boolean bosh) {
     try {
       return bosh ? tlWriterBosh.get().serialize(this) : tlWriter.get().serialize(this);
-    }
-    catch (RuntimeException re) { // exclude further serialization mess: writer has its state
-      if (bosh)
+    } catch (RuntimeException re) { // exclude further serialization mess: writer has its state
+      if (bosh) {
         tlWriterBosh.set(new XmlOutputter(true));
-      else
+      } else {
         tlWriter.set(new XmlOutputter(false));
+      }
       throw re;
     }
   }
@@ -138,6 +134,7 @@ public class Item implements Cloneable {
 
 
   private static Map<Class<? extends Item>, String> nsMap = new ConcurrentHashMap<>();
+
   public static <T extends Item> String ns(T item) {
     String cached = nsMap.get(item.getClass());
     if (cached == null) {
@@ -161,19 +158,19 @@ public class Item implements Cloneable {
       factory.setProperty(XMLOutputFactory2.XSP_NAMESPACE_AWARE, true);
       factory.setProperty(XMLOutputFactory2.IS_REPAIRING_NAMESPACES, true);
       factory.setProperty(XMLOutputFactory2.P_AUTOMATIC_EMPTY_ELEMENTS, true);
-//      factory.setProperty(XMLOutputFactory2.P_AUTOMATIC_NS_PREFIX, true);
+      //      factory.setProperty(XMLOutputFactory2.P_AUTOMATIC_NS_PREFIX, true);
       try {
         writer = new LazyNSXMLStreamWriter(factory.createXMLStreamWriter(output), bosh);
         writer.setNamespaceContext(bosh ? new BOSHNamespaceContext() : new XMPPStreamNamespaceContext());
         writer.writeStartDocument();
-        if (bosh)
+        if (bosh) {
           writer.writeStartElement(BoshBody.NS, "body");
-        else
+        } else {
           writer.writeStartElement(Stream.NS, "stream");
+        }
         writer.writeCharacters("");
         writer.flush();
-      }
-      catch (XMLStreamException e) {
+      } catch (XMLStreamException e) {
         throw new RuntimeException(e);
       }
     }
@@ -185,8 +182,7 @@ public class Item implements Cloneable {
         marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
         marshaller.marshal(item, writer);
         writer.flush();
-      }
-      catch (JAXBException | XMLStreamException e) {
+      } catch (JAXBException | XMLStreamException e) {
         throw new RuntimeException(e);
       }
 
@@ -210,11 +206,11 @@ public class Item implements Cloneable {
       try {
         asyncXml.getInputFeeder().feedInput(XMPP_START.getBytes(), 0, XMPP_START.length());
         reader.drain(o -> { });
-      }
-      catch (XMLStreamException | SAXException e) {
+      } catch (XMLStreamException | SAXException e) {
         throw new RuntimeException(e);
       }
     }
+
     Item result;
     int deserializedLength;
 
@@ -237,8 +233,7 @@ public class Item implements Cloneable {
             result = (Item) o;
           }
         });
-      }
-      catch (XMLStreamException | SAXException e) {
+      } catch (XMLStreamException | SAXException e) {
         throw new RuntimeException(e);
       }
       return result;

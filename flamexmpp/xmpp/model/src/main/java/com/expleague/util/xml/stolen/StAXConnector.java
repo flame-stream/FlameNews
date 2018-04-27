@@ -81,6 +81,7 @@ abstract class StAXConnector {
 
   /**
    * Gets the {@link Location}. Used for implementing the line number information.
+   *
    * @return must not null.
    */
   protected abstract Location getCurrentLocation();
@@ -95,19 +96,23 @@ abstract class StAXConnector {
       public ValidationEventLocator getLocation() {
         return new ValidationEventLocatorImpl(this);
       }
+
       public int getColumnNumber() {
         return getCurrentLocation().getColumnNumber();
       }
+
       public int getLineNumber() {
         return getCurrentLocation().getLineNumber();
       }
+
       public String getPublicId() {
         return getCurrentLocation().getPublicId();
       }
+
       public String getSystemId() {
         return getCurrentLocation().getSystemId();
       }
-    },nsc);
+    }, nsc);
   }
 
   protected final void handleEndDocument() throws SAXException {
@@ -115,14 +120,18 @@ abstract class StAXConnector {
   }
 
   protected static String fixNull(String s) {
-    if(s==null) return "";
-    else        return s;
+    if (s == null) {
+      return "";
+    } else {
+      return s;
+    }
   }
 
   protected final String getQName(String prefix, String localName) {
-    if(prefix==null || prefix.length()==0)
+    if (prefix == null || prefix.length() == 0) {
       return localName;
-    else
+    } else {
       return prefix + ':' + localName;
+    }
   }
 }

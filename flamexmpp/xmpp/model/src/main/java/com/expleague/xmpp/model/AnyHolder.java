@@ -12,15 +12,15 @@ import java.util.function.Predicate;
 public interface AnyHolder {
   List<? super Item> any();
 
-  default  <T> T get(Class<T> clazz) {
+  default <T> T get(Class<T> clazz) {
     //noinspection unchecked
-    return (T)this.any().stream().filter(x -> clazz.isAssignableFrom(x.getClass())).findAny().orElse(null);
+    return (T) this.any().stream().filter(x -> clazz.isAssignableFrom(x.getClass())).findAny().orElse(null);
   }
 
   default <S extends AnyHolder, T extends Item> S append(T o) {
     any().add(o);
     //noinspection unchecked
-    return (S)this;
+    return (S) this;
   }
 
   default boolean has(Class<?> clazz) {
@@ -29,7 +29,9 @@ public interface AnyHolder {
 
   default <T extends Item> boolean has(Class<T> clazz, Predicate<T> filter) {
     //noinspection unchecked
-    return any().stream().filter(x -> x != null && clazz.isAssignableFrom(x.getClass())).anyMatch(x -> filter.test((T) x));
+    return any().stream()
+      .filter(x -> x != null && clazz.isAssignableFrom(x.getClass()))
+      .anyMatch(x -> filter.test((T) x));
   }
 
   default void remove(Class<Request> clazz) {

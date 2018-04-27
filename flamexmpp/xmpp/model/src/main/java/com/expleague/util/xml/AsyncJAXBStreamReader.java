@@ -30,13 +30,15 @@ public class AsyncJAXBStreamReader {
 
   public AsyncJAXBStreamReader(AsyncXMLStreamReader reader, JAXBContext context) {
     try {
-      final UnmarshallerImpl unmarshaller = (UnmarshallerImpl)context.createUnmarshaller();
+      final UnmarshallerImpl unmarshaller = (UnmarshallerImpl) context.createUnmarshaller();
       unmarshaller.setListener(new Unmarshaller.Listener() {
         @Override
         public void afterUnmarshal(Object target, Object parent) {
           if (parent instanceof Stream)
-            //noinspection unchecked
+          //noinspection unchecked
+          {
             action.accept(target);
+          }
         }
       });
       final XmlVisitor handler = unmarshaller.createUnmarshallerHandler(null, false, null);
@@ -59,8 +61,9 @@ public class AsyncJAXBStreamReader {
     for (final Field field : fields) {
       try {
         if (int.class.equals(field.getType()) && (field.getModifiers() & Modifier.STATIC) != 0) {
-          if (next == field.getInt(null))
+          if (next == field.getInt(null)) {
             log.finest(field.getName());
+          }
         }
       } catch (IllegalAccessException e) {
         throw new RuntimeException(e);

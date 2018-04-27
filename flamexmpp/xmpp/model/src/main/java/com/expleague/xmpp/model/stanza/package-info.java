@@ -6,9 +6,9 @@
 //
 
 @javax.xml.bind.annotation.XmlSchema(
-    namespace = "jabber:client",
-    elementFormDefault = XmlNsForm.UNQUALIFIED,
-    xmlns = {@XmlNs(prefix = "", namespaceURI = "jabber:client")})
+  namespace = "jabber:client",
+  elementFormDefault = XmlNsForm.UNQUALIFIED,
+  xmlns = {@XmlNs(prefix = "", namespaceURI = "jabber:client")})
 package com.expleague.xmpp.model.stanza;
 
 import javax.xml.bind.annotation.XmlNs;

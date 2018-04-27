@@ -70,47 +70,47 @@ public class StAXStreamConnector extends StAXConnector {
 
   /**
    * Creates a {@link StAXConnector} from {@link XMLStreamReader}.
-   *
+   * <p>
    * This method checks if the parser is FI parser and acts accordingly.
    */
   public static StAXConnector create(XMLStreamReader reader, XmlVisitor visitor) {
     // try optimized codepath
     final Class readerClass = reader.getClass();
-    if (FI_STAX_READER_CLASS != null && FI_STAX_READER_CLASS.isAssignableFrom(readerClass) && FI_CONNECTOR_CTOR!=null) {
+    if (FI_STAX_READER_CLASS != null && FI_STAX_READER_CLASS.isAssignableFrom(readerClass)
+      && FI_CONNECTOR_CTOR != null) {
       try {
-        return FI_CONNECTOR_CTOR.newInstance(reader,visitor);
+        return FI_CONNECTOR_CTOR.newInstance(reader, visitor);
       } catch (Exception t) {
       }
     }
 
     // Quick hack until SJSXP fixes 6270116
     boolean isZephyr = readerClass.getName().equals("com.sun.xml.stream.XMLReaderImpl");
-    if (getBoolProp(reader,"org.codehaus.stax2.internNames") &&
-        getBoolProp(reader,"org.codehaus.stax2.internNsUris"))
+    if (getBoolProp(reader, "org.codehaus.stax2.internNames") &&
+      getBoolProp(reader, "org.codehaus.stax2.internNsUris")) {
       ; // no need for interning
-    else
-    if (isZephyr)
+    } else if (isZephyr) {
       ; // no need for interning
-    else
-    if (checkImplementaionNameOfSjsxp(reader))
+    } else if (checkImplementaionNameOfSjsxp(reader)) {
       ; // no need for interning.
-    else
+    } else {
       visitor = new InterningXmlVisitor(visitor);
+    }
 
-    if (STAX_EX_READER_CLASS!=null && STAX_EX_READER_CLASS.isAssignableFrom(readerClass)) {
+    if (STAX_EX_READER_CLASS != null && STAX_EX_READER_CLASS.isAssignableFrom(readerClass)) {
       try {
-        return STAX_EX_CONNECTOR_CTOR.newInstance(reader,visitor);
+        return STAX_EX_CONNECTOR_CTOR.newInstance(reader, visitor);
       } catch (Exception t) {
       }
     }
 
-    return new StAXStreamConnector(reader,visitor);
+    return new StAXStreamConnector(reader, visitor);
   }
 
   private static boolean checkImplementaionNameOfSjsxp(XMLStreamReader reader) {
     try {
       Object name = reader.getProperty("http://java.sun.com/xml/stream/properties/implementation-name");
-      return name!=null && name.equals("sjsxp");
+      return name != null && name.equals("sjsxp");
     } catch (Exception e) {
       // be defensive against broken StAX parsers since javadoc is not clear
       // about when an error happens
@@ -121,7 +121,9 @@ public class StAXStreamConnector extends StAXConnector {
   private static boolean getBoolProp(XMLStreamReader r, String n) {
     try {
       Object o = r.getProperty(n);
-      if(o instanceof Boolean)    return (Boolean)o;
+      if (o instanceof Boolean) {
+        return (Boolean) o;
+      }
       return false;
     } catch (Exception e) {
       // be defensive against broken StAX parsers since javadoc is not clear
@@ -155,46 +157,50 @@ public class StAXStreamConnector extends StAXConnector {
 
     try {
       // remembers the nest level of elements to know when we are done.
-      int depth=0;
+      int depth = 0;
 
       // if the parser is at the start tag, proceed to the first element
       int event = staxStreamReader.getEventType();
-      if(event == XMLStreamConstants.START_DOCUMENT) {
+      if (event == XMLStreamConstants.START_DOCUMENT) {
         // nextTag doesn't correctly handle DTDs
-        while( !staxStreamReader.isStartElement() )
+        while (!staxStreamReader.isStartElement()) {
           event = staxStreamReader.next();
+        }
       }
 
 
-      if( event!=XMLStreamConstants.START_ELEMENT)
+      if (event != XMLStreamConstants.START_ELEMENT) {
         throw new IllegalStateException("The current event is not START_ELEMENT\n but " + event);
+      }
 
       handleStartDocument(staxStreamReader.getNamespaceContext());
 
-OUTER:
-      while(true) {
+      OUTER:
+      while (true) {
         // These are all of the events listed in the javadoc for
         // XMLEvent.
         // The spec only really describes 11 of them.
         switch (event) {
-          case XMLStreamConstants.START_ELEMENT :
+          case XMLStreamConstants.START_ELEMENT:
             handleStartElement();
             depth++;
             break;
-          case XMLStreamConstants.END_ELEMENT :
+          case XMLStreamConstants.END_ELEMENT:
             depth--;
             handleEndElement();
-            if(depth==0)    break OUTER;
+            if (depth == 0) {
+              break OUTER;
+            }
             break;
-          case XMLStreamConstants.CHARACTERS :
-          case XMLStreamConstants.CDATA :
-          case XMLStreamConstants.SPACE :
+          case XMLStreamConstants.CHARACTERS:
+          case XMLStreamConstants.CDATA:
+          case XMLStreamConstants.SPACE:
             handleCharacters();
             break;
           // otherwise simply ignore
         }
 
-        event=staxStreamReader.next();
+        event = staxStreamReader.next();
       }
 
       staxStreamReader.next();    // move beyond the end tag.
@@ -205,7 +211,8 @@ OUTER:
     }
   }
 
-  int depth=0;
+  int depth = 0;
+
   public void drain() throws XMLStreamException {
 
     try {
@@ -213,8 +220,8 @@ OUTER:
 
       // if the parser is at the start tag, proceed to the first element
       int event = staxStreamReader.next();
-OUTER:
-      while(true) {
+      OUTER:
+      while (true) {
         // These are all of the events listed in the javadoc for
         // XMLEvent.
         // The spec only really describes 11 of them.
@@ -222,27 +229,29 @@ OUTER:
           case XMLStreamConstants.START_DOCUMENT:
             handleStartDocument(staxStreamReader.getNamespaceContext());
             break;
-          case XMLStreamConstants.START_ELEMENT :
+          case XMLStreamConstants.START_ELEMENT:
             handleStartElement();
             depth++;
             break;
-          case XMLStreamConstants.END_ELEMENT :
+          case XMLStreamConstants.END_ELEMENT:
             depth--;
             handleEndElement();
-            if(depth==0)
+            if (depth == 0) {
               break OUTER;
+            }
             break;
-          case XMLStreamConstants.CHARACTERS :
-          case XMLStreamConstants.CDATA :
-          case XMLStreamConstants.SPACE :
-            if (depth > 0)
+          case XMLStreamConstants.CHARACTERS:
+          case XMLStreamConstants.CDATA:
+          case XMLStreamConstants.SPACE:
+            if (depth > 0) {
               handleCharacters();
+            }
             break;
           case XMLStreamConstants.END_DOCUMENT:
             handleEndDocument();
           case AsyncXMLStreamReader.EVENT_INCOMPLETE:
             break OUTER;
-            // otherwise simply ignore
+          // otherwise simply ignore
         }
         event = staxStreamReader.next();
       }
@@ -257,7 +266,7 @@ OUTER:
   }
 
   protected String getCurrentQName() {
-    return getQName(staxStreamReader.getPrefix(),staxStreamReader.getLocalName());
+    return getQName(staxStreamReader.getPrefix(), staxStreamReader.getLocalName());
   }
 
   private void handleEndElement() throws SAXException {
@@ -282,8 +291,9 @@ OUTER:
     int nsCount = staxStreamReader.getNamespaceCount();
     for (int i = 0; i < nsCount; i++) {
       visitor.startPrefixMapping(
-          fixNull(staxStreamReader.getNamespacePrefix(i)),
-          fixNull(staxStreamReader.getNamespaceURI(i)));
+        fixNull(staxStreamReader.getNamespacePrefix(i)),
+        fixNull(staxStreamReader.getNamespaceURI(i))
+      );
     }
 
     // fire startElement
@@ -304,7 +314,9 @@ OUTER:
 
     public String getURI(int index) {
       String uri = staxStreamReader.getAttributeNamespace(index);
-      if(uri==null)   return "";
+      if (uri == null) {
+        return "";
+      }
       return uri;
     }
 
@@ -314,10 +326,11 @@ OUTER:
 
     public String getQName(int index) {
       String prefix = staxStreamReader.getAttributePrefix(index);
-      if(prefix==null || prefix.length()==0)
+      if (prefix == null || prefix.length() == 0) {
         return getLocalName(index);
-      else
+      } else {
         return prefix + ':' + getLocalName(index);
+      }
     }
 
     public String getType(int index) {
@@ -329,58 +342,72 @@ OUTER:
     }
 
     public int getIndex(String uri, String localName) {
-      for( int i=getLength()-1; i>=0; i-- )
-        if( localName.equals(getLocalName(i)) && uri.equals(getURI(i)))
+      for (int i = getLength() - 1; i >= 0; i--) {
+        if (localName.equals(getLocalName(i)) && uri.equals(getURI(i))) {
           return i;
+        }
+      }
       return -1;
     }
 
     // this method sholdn't be used that often (if at all)
     // so it's OK to be slow.
     public int getIndex(String qName) {
-      for( int i=getLength()-1; i>=0; i-- ) {
-        if(qName.equals(getQName(i)))
+      for (int i = getLength() - 1; i >= 0; i--) {
+        if (qName.equals(getQName(i))) {
           return i;
+        }
       }
       return -1;
     }
 
     public String getType(String uri, String localName) {
-      int index = getIndex(uri,localName);
-      if(index<0)     return null;
+      int index = getIndex(uri, localName);
+      if (index < 0) {
+        return null;
+      }
       return getType(index);
     }
 
     public String getType(String qName) {
       int index = getIndex(qName);
-      if(index<0)     return null;
+      if (index < 0) {
+        return null;
+      }
       return getType(index);
     }
 
     public String getValue(String uri, String localName) {
-      int index = getIndex(uri,localName);
-      if(index<0)     return null;
+      int index = getIndex(uri, localName);
+      if (index < 0) {
+        return null;
+      }
       return getValue(index);
     }
 
     public String getValue(String qName) {
       int index = getIndex(qName);
-      if(index<0)     return null;
+      if (index < 0) {
+        return null;
+      }
       return getValue(index);
     }
   };
 
   protected void handleCharacters() throws XMLStreamException, SAXException {
-    if( predictor.expectText() )
+    if (predictor.expectText()) {
       buffer.append(
-          staxStreamReader.getTextCharacters(),
-          staxStreamReader.getTextStart(),
-          staxStreamReader.getTextLength() );
+        staxStreamReader.getTextCharacters(),
+        staxStreamReader.getTextStart(),
+        staxStreamReader.getTextLength()
+      );
+    }
   }
 
-  private void processText( boolean ignorable ) throws SAXException {
-    if(predictor.expectText() && (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer) || context.getCurrentState().isMixed())) {
-      if(textReported) {
+  private void processText(boolean ignorable) throws SAXException {
+    if (predictor.expectText() && (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer) || context.getCurrentState()
+      .isMixed())) {
+      if (textReported) {
         textReported = false;
       } else {
         visitor.text(buffer);
@@ -388,7 +415,6 @@ OUTER:
     }
     buffer.setLength(0);
   }
-
 
 
   /**
@@ -402,10 +428,11 @@ OUTER:
       Class<?> fisr = Class.forName("org.jvnet.fastinfoset.stax.FastInfosetStreamReader");
       Class<?> sdp = Class.forName("com.sun.xml.fastinfoset.stax.StAXDocumentParser");
       // Check if StAXDocumentParser implements FastInfosetStreamReader
-      if (fisr.isAssignableFrom(sdp))
+      if (fisr.isAssignableFrom(sdp)) {
         return sdp;
-      else
+      } else {
         return null;
+      }
     } catch (Throwable e) {
       return null;
     }
@@ -413,12 +440,13 @@ OUTER:
 
   private static Constructor<? extends StAXConnector> initFastInfosetConnectorClass() {
     try {
-      if (FI_STAX_READER_CLASS == null)
+      if (FI_STAX_READER_CLASS == null) {
         return null;
+      }
 
       Class c = Class.forName(
-          "com.sun.xml.bind.v2.runtime.unmarshaller.FastInfosetConnector");
-      return c.getConstructor(FI_STAX_READER_CLASS,XmlVisitor.class);
+        "com.sun.xml.bind.v2.runtime.unmarshaller.FastInfosetConnector");
+      return c.getConstructor(FI_STAX_READER_CLASS, XmlVisitor.class);
     } catch (Throwable e) {
       return null;
     }
@@ -441,7 +469,7 @@ OUTER:
   private static Constructor<? extends StAXConnector> initStAXExConnector() {
     try {
       Class c = Class.forName("com.sun.xml.bind.v2.runtime.unmarshaller.StAXExConnector");
-      return c.getConstructor(STAX_EX_READER_CLASS,XmlVisitor.class);
+      return c.getConstructor(STAX_EX_READER_CLASS, XmlVisitor.class);
     } catch (Throwable e) {
       return null;
     }

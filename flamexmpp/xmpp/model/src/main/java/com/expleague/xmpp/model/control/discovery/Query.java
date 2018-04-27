@@ -1,8 +1,6 @@
 package com.expleague.xmpp.model.control.discovery;
 
-import com.expleague.xmpp.model.Item;
 import com.expleague.xmpp.model.control.XMPPQuery;
-import com.expleague.xmpp.model.stanza.Iq;
 
 import javax.xml.bind.annotation.XmlRootElement;
 

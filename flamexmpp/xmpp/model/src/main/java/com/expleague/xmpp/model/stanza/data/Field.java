@@ -21,9 +21,9 @@ import java.util.List;
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -56,210 +56,184 @@ import java.util.List;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "desc",
-    "required",
-    "value",
-    "option"
+  "desc",
+  "required",
+  "value",
+  "option"
 })
 @XmlRootElement(name = "field")
 public class Field {
-    protected String desc;
-    protected String required;
-    protected List<String> value;
-    protected List<Option> option;
-    @XmlAttribute(name = "label")
-    protected String label;
-    @XmlAttribute(name = "type")
-    @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
-    protected String type;
-    @XmlAttribute(name = "var")
-    protected String var;
+  protected String desc;
+  protected String required;
+  protected List<String> value;
+  protected List<Option> option;
+  @XmlAttribute(name = "label")
+  protected String label;
+  @XmlAttribute(name = "type")
+  @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
+  protected String type;
+  @XmlAttribute(name = "var")
+  protected String var;
 
-    /**
-     * Gets the value of the desc property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getDesc() {
-        return desc;
-    }
+  /**
+   * Gets the value of the desc property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getDesc() {
+    return desc;
+  }
 
-    /**
-     * Sets the value of the desc property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setDesc(String value) {
-        this.desc = value;
-    }
+  /**
+   * Sets the value of the desc property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setDesc(String value) {
+    this.desc = value;
+  }
 
-    /**
-     * Gets the value of the required property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRequired() {
-        return required;
-    }
+  /**
+   * Gets the value of the required property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getRequired() {
+    return required;
+  }
 
-    /**
-     * Sets the value of the required property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRequired(String value) {
-        this.required = value;
-    }
+  /**
+   * Sets the value of the required property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setRequired(String value) {
+    this.required = value;
+  }
 
-    /**
-     * Gets the value of the value property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the value property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getValue().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link String }
-     * 
-     * 
-     */
-    public List<String> getValue() {
-        if (value == null) {
-            value = new ArrayList<String>();
-        }
-        return this.value;
+  /**
+   * Gets the value of the value property.
+   * <p>
+   * <p>
+   * This accessor method returns a reference to the live list,
+   * not a snapshot. Therefore any modification you make to the
+   * returned list will be present inside the JAXB object.
+   * This is why there is not a <CODE>set</CODE> method for the value property.
+   * <p>
+   * <p>
+   * For example, to add a new item, do as follows:
+   * <pre>
+   *    getValue().add(newItem);
+   * </pre>
+   * <p>
+   * <p>
+   * <p>
+   * Objects of the following type(s) are allowed in the list
+   * {@link String }
+   */
+  public List<String> getValue() {
+    if (value == null) {
+      value = new ArrayList<String>();
     }
+    return this.value;
+  }
 
-    /**
-     * Gets the value of the option property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the option property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getOption().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Option }
-     * 
-     * 
-     */
-    public List<Option> getOption() {
-        if (option == null) {
-            option = new ArrayList<Option>();
-        }
-        return this.option;
+  /**
+   * Gets the value of the option property.
+   * <p>
+   * <p>
+   * This accessor method returns a reference to the live list,
+   * not a snapshot. Therefore any modification you make to the
+   * returned list will be present inside the JAXB object.
+   * This is why there is not a <CODE>set</CODE> method for the option property.
+   * <p>
+   * <p>
+   * For example, to add a new item, do as follows:
+   * <pre>
+   *    getOption().add(newItem);
+   * </pre>
+   * <p>
+   * <p>
+   * <p>
+   * Objects of the following type(s) are allowed in the list
+   * {@link Option }
+   */
+  public List<Option> getOption() {
+    if (option == null) {
+      option = new ArrayList<Option>();
     }
+    return this.option;
+  }
 
-    /**
-     * Gets the value of the label property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getLabel() {
-        return label;
-    }
+  /**
+   * Gets the value of the label property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getLabel() {
+    return label;
+  }
 
-    /**
-     * Sets the value of the label property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setLabel(String value) {
-        this.label = value;
-    }
+  /**
+   * Sets the value of the label property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setLabel(String value) {
+    this.label = value;
+  }
 
-    /**
-     * Gets the value of the type property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getType() {
-        if (type == null) {
-            return "text-single";
-        } else {
-            return type;
-        }
+  /**
+   * Gets the value of the type property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getType() {
+    if (type == null) {
+      return "text-single";
+    } else {
+      return type;
     }
+  }
 
-    /**
-     * Sets the value of the type property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setType(String value) {
-        this.type = value;
-    }
+  /**
+   * Sets the value of the type property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setType(String value) {
+    this.type = value;
+  }
 
-    /**
-     * Gets the value of the var property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getVar() {
-        return var;
-    }
+  /**
+   * Gets the value of the var property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getVar() {
+    return var;
+  }
 
-    /**
-     * Sets the value of the var property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setVar(String value) {
-        this.var = value;
-    }
+  /**
+   * Sets the value of the var property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setVar(String value) {
+    this.var = value;
+  }
 
 }

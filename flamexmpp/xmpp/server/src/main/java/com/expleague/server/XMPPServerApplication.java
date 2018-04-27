@@ -8,9 +8,7 @@ import com.typesafe.config.ConfigFactory;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.io.FileInputStream;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogManager;
 
 /**
  * User: solar

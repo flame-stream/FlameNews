@@ -18,6 +18,7 @@ public class Features extends Item {
   public Features(XMPPFeature... features) {
     this.features.addAll(Arrays.asList(features));
   }
+
   public Features() {
   }
 

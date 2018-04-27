@@ -57,12 +57,14 @@ public class LazyNSXMLStreamWriter implements XMLStreamWriter {
   }
 
   public void writeAttribute(String namespaceURI, String localName, String value) throws XMLStreamException {
-    if ("http://www.w3.org/2001/XMLSchema-instance".equals(namespaceURI))
+    if ("http://www.w3.org/2001/XMLSchema-instance".equals(namespaceURI)) {
       return;
+    }
     delegate.writeAttribute(namespaceURI, localName, value);
   }
 
-  public void writeAttribute(String prefix, String namespaceURI, String localName, String value) throws XMLStreamException {
+  public void writeAttribute(String prefix, String namespaceURI, String localName, String value) throws
+                                                                                                 XMLStreamException {
     writeAttribute(namespaceURI, localName, value);
   }
 
@@ -115,9 +117,9 @@ public class LazyNSXMLStreamWriter implements XMLStreamWriter {
   }
 
   public void writeNamespace(String prefix, String namespaceURI) throws XMLStreamException {
-//    if ("stream".equals(prefix)) {
-//      delegate.writeNamespace(prefix, namespaceURI);
-//    }
+    //    if ("stream".equals(prefix)) {
+    //      delegate.writeNamespace(prefix, namespaceURI);
+    //    }
   }
 
   public void writeProcessingInstruction(String target) throws XMLStreamException {
@@ -151,8 +153,9 @@ public class LazyNSXMLStreamWriter implements XMLStreamWriter {
   public void writeStartElement(String prefix, String localName, String namespaceURI) throws XMLStreamException {
     if (bosh && Stream.NS.equals(namespaceURI)) {
       delegate.writeStartElement("stream", localName, namespaceURI);
-//      delegate.writeNamespace("stream", namespaceURI);
+      //      delegate.writeNamespace("stream", namespaceURI);
+    } else {
+      delegate.writeStartElement("", localName, namespaceURI);
     }
-    else delegate.writeStartElement("", localName, namespaceURI);
   }
 }

@@ -17,7 +17,6 @@ import com.expleague.xmpp.model.stanza.Presence.PresenceType;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 public class XMPP extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(context().system(), self());
@@ -48,7 +47,7 @@ public class XMPP extends AbstractActor {
   /**
    * If there is no sender than iq is sent from the service to client (e.g., roster)
    * If the destination is full JID (local@domain/resource) it is directed to client
-   *
+   * <p>
    * In all other cases the destination is the local service
    */
   private void onIq(Iq<?> iq) {

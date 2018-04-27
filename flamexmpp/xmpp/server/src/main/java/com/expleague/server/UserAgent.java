@@ -56,7 +56,7 @@ public class UserAgent extends AbstractActor {
   }
 
   private void rosterPush(Iq<?> iq) {
-    if (iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET)  {
+    if (iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET) {
       broadcast(iq);
     } else {
       deliver(iq);

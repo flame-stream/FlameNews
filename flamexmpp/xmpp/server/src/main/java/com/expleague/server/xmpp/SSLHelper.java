@@ -9,7 +9,6 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
 /**
  * User: solar

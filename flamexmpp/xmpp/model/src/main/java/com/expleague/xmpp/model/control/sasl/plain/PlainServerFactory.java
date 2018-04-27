@@ -13,28 +13,32 @@ import java.util.Map;
  */
 public class PlainServerFactory extends AbstractSaslFactory implements SaslServerFactory {
 
-    /**
-     * The PLAIN mechanism name
-     */
-    public static final String PLAIN = "PLAIN";
+  /**
+   * The PLAIN mechanism name
+   */
+  public static final String PLAIN = "PLAIN";
 
-    /**
-     * Default constructor.
-     */
-    public PlainServerFactory() {
-      this(PLAIN);
-    }
+  /**
+   * Default constructor.
+   */
+  public PlainServerFactory() {
+    this(PLAIN);
+  }
 
-    /**
-     * Construct a new instance.
-     *
-     * @param name the mechanism name
-     */
-    protected PlainServerFactory(final String name) {
-      super(name);
-    }
+  /**
+   * Construct a new instance.
+   *
+   * @param name the mechanism name
+   */
+  protected PlainServerFactory(final String name) {
+    super(name);
+  }
 
-  public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props, CallbackHandler cbh) throws SaslException {
+  public SaslServer createSaslServer(String mechanism,
+                                     String protocol,
+                                     String serverName,
+                                     Map<String, ?> props,
+                                     CallbackHandler cbh) throws SaslException {
     // Unless we are sure plain is required don't return a SaslServer
     if (PLAIN.equals(mechanism) == false || matches(props) == false) {
       return null;

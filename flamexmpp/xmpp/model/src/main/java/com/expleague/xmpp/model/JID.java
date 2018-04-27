@@ -45,8 +45,7 @@ public class JID implements Serializable, Cloneable {
   public URI asURI() {
     try {
       return new URI(bare);
-    }
-    catch (URISyntaxException ignore) {
+    } catch (URISyntaxException ignore) {
       throw new RuntimeException(ignore);
     }
   }
@@ -91,8 +90,9 @@ public class JID implements Serializable, Cloneable {
   }
 
   public boolean equals(Object obj) {
-    if (!(obj instanceof JID))
+    if (!(obj instanceof JID)) {
       return false;
+    }
     final JID jid = (JID) obj;
     //noinspection StringEquality
     return jid.bare == bare && (resource == jid.resource || (resource != null && resource.equals(jid.resource)));
@@ -105,8 +105,7 @@ public class JID implements Serializable, Cloneable {
   public static JID parse(String addr) {
     try {
       return new JID(addr);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       // todo: is it ok? not checked by clients
       return null;
     }
@@ -140,11 +139,13 @@ public class JID implements Serializable, Cloneable {
     out.writeUTF(bare);
     out.writeUTF(resource());
   }
+
   private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
     bare = in.readUTF().intern();
     final String resource = in.readUTF();
     this.resource = resource.isEmpty() ? null : resource;
   }
+
   private void readObjectNoData() throws ObjectStreamException {
   }
 }

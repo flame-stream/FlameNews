@@ -44,7 +44,9 @@ public class Failure extends Item {
     MECHANISM_TOO_WEAK,
     NOT_AUTHORIZED,
     TEMPORARY_AUTH_FAILURE,
-    ABORTED, TRANSITION_NEEDED;
+    ABORTED,
+    TRANSITION_NEEDED;
+
     public static class TypeAdapter extends XmlAdapter<JAXBElement<?>, Type> {
       @Override
       public Type unmarshal(JAXBElement<?> v) throws Exception {

@@ -13,7 +13,6 @@ import com.expleague.server.xmpp.XMPPClientConnection;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
-import java.util.logging.Logger;
 
 /**
  * User: solar

@@ -4,9 +4,9 @@
  * Time: 16:12
  */
 @XmlSchema(
-    namespace = "urn:ietf:params:xml:ns:xmpp-sasl",
-    elementFormDefault = XmlNsForm.UNQUALIFIED,
-    xmlns = {@XmlNs(prefix = "", namespaceURI = "urn:ietf:params:xml:ns:xmpp-sasl")}
+  namespace = "urn:ietf:params:xml:ns:xmpp-sasl",
+  elementFormDefault = XmlNsForm.UNQUALIFIED,
+  xmlns = {@XmlNs(prefix = "", namespaceURI = "urn:ietf:params:xml:ns:xmpp-sasl")}
 )
 package com.expleague.xmpp.model.control.sasl;
 

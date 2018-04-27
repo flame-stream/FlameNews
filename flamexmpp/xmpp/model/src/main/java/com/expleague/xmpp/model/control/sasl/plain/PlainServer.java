@@ -68,7 +68,7 @@ public class PlainServer extends AbstractSaslServer {
           authorizedId = acb.getAuthorizedID();
         } else {
           throw new SaslException("PLAIN: " + authcid +
-              " is not authorized to act as " + authzid);
+            " is not authorized to act as " + authzid);
         }
 
         // negotiationComplete must only be called after the authorizedId is set.
@@ -114,9 +114,9 @@ public class PlainServer extends AbstractSaslServer {
       startPos += length + 1;
 
       if (authorizationId == null) {
-        return new String[] { authenticationId, password };
+        return new String[]{authenticationId, password};
       } else {
-        return new String[] { authorizationId, authenticationId, password };
+        return new String[]{authorizationId, authenticationId, password};
       }
     }
 
@@ -131,8 +131,9 @@ public class PlainServer extends AbstractSaslServer {
       int nulpos = -1;
 
       for (int i = startPos; i < message.length && nulpos < 0; i++) {
-        if (message[i] == UTF8NUL)
+        if (message[i] == UTF8NUL) {
           nulpos = i;
+        }
       }
 
       if (mandatory && nulpos < 0) {
@@ -174,7 +175,7 @@ public class PlainServer extends AbstractSaslServer {
       return authorizedId;
     } else {
       throw new IllegalStateException(
-          "PLAIN server negotiation not complete");
+        "PLAIN server negotiation not complete");
     }
   }
 

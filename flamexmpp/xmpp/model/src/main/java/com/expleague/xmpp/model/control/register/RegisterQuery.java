@@ -20,9 +20,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -58,78 +58,77 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "registered",
-    "instructions",
-    "username",
-    "nick",
-    "password",
-    "name",
-    "first",
-    "last",
-    "email",
-    "address",
-    "city",
-    "state",
-    "zip",
-    "phone",
-    "url",
-    "date",
-    "misc",
-    "text",
-    "key",
-    "remove",
-    "x"
+  "registered",
+  "instructions",
+  "username",
+  "nick",
+  "password",
+  "name",
+  "first",
+  "last",
+  "email",
+  "address",
+  "city",
+  "state",
+  "zip",
+  "phone",
+  "url",
+  "date",
+  "misc",
+  "text",
+  "key",
+  "remove",
+  "x"
 })
 @XmlRootElement(name = "query", namespace = "jabber:iq:register")
 public class RegisterQuery {
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String registered;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String instructions;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String username;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String nick;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String password;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String name;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String first;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String last;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String email;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String address;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String city;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String state;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String zip;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String phone;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String url;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String date;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String misc;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String text;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String key;
-    @XmlElement(namespace = "jabber:iq:register")
-    protected String remove;
-    protected X x;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String registered;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String instructions;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String username;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String nick;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String password;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String name;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String first;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String last;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String email;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String address;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String city;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String state;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String zip;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String phone;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String url;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String date;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String misc;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String text;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String key;
+  @XmlElement(namespace = "jabber:iq:register")
+  protected String remove;
+  protected X x;
 
   public RegisterQuery() {}
+
   public RegisterQuery(String local, boolean expert) {
     username = local;
     password = new FastRandom(local.hashCode()).nextBase64String(10);
@@ -137,27 +136,27 @@ public class RegisterQuery {
   }
 
   public boolean isEmpty() {
-        return registered == null
-            && instructions == null
-            && username == null
-            && nick == null
-            && password == null
-            && first == null
-            && last == null
-            && email == null
-            && address == null
-            && city == null
-            && zip == null
-            && state == null
-            && phone == null
-            && url == null
-            && date == null
-            && misc == null
-            && text == null
-            && key == null
-            && remove == null
-            && x == null;
-    }
+    return registered == null
+      && instructions == null
+      && username == null
+      && nick == null
+      && password == null
+      && first == null
+      && last == null
+      && email == null
+      && address == null
+      && city == null
+      && zip == null
+      && state == null
+      && phone == null
+      && url == null
+      && date == null
+      && misc == null
+      && text == null
+      && key == null
+      && remove == null
+      && x == null;
+  }
 
   public static RegisterQuery requiredFields() {
     final RegisterQuery query = new RegisterQuery();

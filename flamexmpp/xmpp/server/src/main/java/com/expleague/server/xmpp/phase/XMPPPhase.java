@@ -10,9 +10,6 @@ import com.expleague.server.xmpp.XMPPClientConnection;
 import com.expleague.xmpp.model.Item;
 import com.expleague.xmpp.model.control.Open;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  * User: solar
  * Date: 08.12.15

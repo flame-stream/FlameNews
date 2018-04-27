@@ -30,9 +30,9 @@ import java.util.List;
 
 /**
  * <p>Java class for anonymous complex type.
- *
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- *
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -67,8 +67,6 @@ import java.util.List;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- *
- *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement
@@ -123,8 +121,12 @@ public class Presence extends Stanza implements AnyHolder {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Presence)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Presence)) {
+      return false;
+    }
     Presence presence = (Presence) o;
 
     return type == presence.type && (any == presence.any || (any != null && any.equals(presence.any)));
@@ -142,19 +144,20 @@ public class Presence extends Stanza implements AnyHolder {
     return this.any != null ? this.any : (this.any = new ArrayList<>());
   }
 
-  public <T extends Item> T copy(String idSuffix){
+  public <T extends Item> T copy(String idSuffix) {
     final Presence clone = super.copy(idSuffix);
-    if (any != null)
+    if (any != null) {
       clone.any = new ArrayList<>(any);
+    }
     //noinspection unchecked
-    return (T)clone;
+    return (T) clone;
   }
 
   /**
    * <p>Java class for anonymous complex type.
-   *
+   * <p>
    * <p>The following schema fragment specifies the expected content contained within this class.
-   *
+   * <p>
    * <pre>
    * &lt;complexType>
    *   &lt;simpleContent>
@@ -164,8 +167,6 @@ public class Presence extends Stanza implements AnyHolder {
    *   &lt;/simpleContent>
    * &lt;/complexType>
    * </pre>
-   *
-   *
    */
   @XmlAccessorType(XmlAccessType.FIELD)
   @XmlRootElement(name = "status")
@@ -178,8 +179,9 @@ public class Presence extends Stanza implements AnyHolder {
     protected String lang;
 
     public Status() {}
+
     public Status(PresenceType type) {
-      switch(type) {
+      switch (type) {
         case UNAVAILABLE:
           value = "unavailable";
           break;
@@ -192,8 +194,12 @@ public class Presence extends Stanza implements AnyHolder {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (!(o instanceof Status)) return false;
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Status)) {
+        return false;
+      }
       Status status = (Status) o;
       return value.equals(status.value);
     }
@@ -216,8 +222,12 @@ public class Presence extends Stanza implements AnyHolder {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (!(o instanceof Show)) return false;
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Show)) {
+        return false;
+      }
 
       Show show = (Show) o;
 
@@ -242,8 +252,12 @@ public class Presence extends Stanza implements AnyHolder {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (!(o instanceof Priority)) return false;
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Priority)) {
+        return false;
+      }
 
       Priority priority = (Priority) o;
 

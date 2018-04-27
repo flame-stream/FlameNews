@@ -45,12 +45,15 @@ public abstract class AbstractSaslParticipant {
   /**
    * Construct a new instance.
    *
-   * @param mechanismName the name of the defined mechanism
-   * @param protocol the protocol
-   * @param serverName the server name
+   * @param mechanismName   the name of the defined mechanism
+   * @param protocol        the protocol
+   * @param serverName      the server name
    * @param callbackHandler the callback handler
    */
-  protected AbstractSaslParticipant(final String mechanismName, final String protocol, final String serverName, final CallbackHandler callbackHandler) {
+  protected AbstractSaslParticipant(final String mechanismName,
+                                    final String protocol,
+                                    final String serverName,
+                                    final CallbackHandler callbackHandler) {
     this.callbackHandler = callbackHandler;
     this.mechanismName = mechanismName;
     this.protocol = protocol;
@@ -75,7 +78,7 @@ public abstract class AbstractSaslParticipant {
    * Handle callbacks, wrapping exceptions as needed.
    *
    * @param callbacks the callbacks to handle
-   * @throws SaslException if a callback failed
+   * @throws SaslException                if a callback failed
    * @throws UnsupportedCallbackException if a callback isn't supported
    */
   protected void tryHandleCallbacks(Callback... callbacks) throws SaslException, UnsupportedCallbackException {
@@ -151,7 +154,7 @@ public abstract class AbstractSaslParticipant {
       ok = true;
       return result;
     } finally {
-      if (! ok) {
+      if (!ok) {
         state = SaslState.FAILED;
       }
     }
@@ -170,11 +173,11 @@ public abstract class AbstractSaslParticipant {
    * Wraps a byte array to be sent to the other participant.
    *
    * @param outgoing a non-{@code null} byte array containing the bytes to encode
-   * @param offset the first byte to encode
-   * @param len the number of bytes to use
+   * @param offset   the first byte to encode
+   * @param len      the number of bytes to use
    * @return A non-{@code null} byte array containing the encoded bytes
-   * @exception SaslException if wrapping fails
-   * @exception IllegalStateException if wrapping is not configured
+   * @throws SaslException         if wrapping fails
+   * @throws IllegalStateException if wrapping is not configured
    */
   public byte[] wrap(final byte[] outgoing, final int offset, final int len) throws SaslException {
     SaslWrapper wrapper = this.wrapper;
@@ -188,11 +191,11 @@ public abstract class AbstractSaslParticipant {
    * Unwraps a byte array received from the other participant.
    *
    * @param incoming a non-{@code null} byte array containing the bytes to decode
-   * @param offset the first byte to decode
-   * @param len the number of bytes to use
+   * @param offset   the first byte to decode
+   * @param len      the number of bytes to use
    * @return A non-{@code null} byte array containing the decoded bytes
-   * @exception SaslException if wrapping fails
-   * @exception IllegalStateException if wrapping is not configured
+   * @throws SaslException         if wrapping fails
+   * @throws IllegalStateException if wrapping is not configured
    */
   public byte[] unwrap(final byte[] incoming, final int offset, final int len) throws SaslException {
     SaslWrapper wrapper = this.wrapper;
@@ -225,8 +228,8 @@ public abstract class AbstractSaslParticipant {
   /**
    * Get a string property value from the given map.
    *
-   * @param map the property map
-   * @param key the property
+   * @param map        the property map
+   * @param key        the property
    * @param defaultVal the value to return if the key is not in the map
    * @return the value
    */
@@ -242,8 +245,8 @@ public abstract class AbstractSaslParticipant {
   /**
    * Get a string property value from the given map.
    *
-   * @param map the property map
-   * @param key the property
+   * @param map        the property map
+   * @param key        the property
    * @param defaultVal the value to return if the key is not in the map
    * @return the value
    */
@@ -255,7 +258,6 @@ public abstract class AbstractSaslParticipant {
       return Integer.parseInt(val.toString());
     }
   }
-
 
 
   /**

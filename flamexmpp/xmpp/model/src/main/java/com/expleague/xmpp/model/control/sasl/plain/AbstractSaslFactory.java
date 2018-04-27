@@ -26,7 +26,7 @@ public abstract class AbstractSaslFactory {
    * @param name the mechanism name
    */
   protected AbstractSaslFactory(final String name) {
-    names = new String[] { name };
+    names = new String[]{name};
   }
 
   /**
@@ -47,16 +47,15 @@ public abstract class AbstractSaslFactory {
    * Determine whether the properties match this mechanism.
    *
    * @param props the properties
-   *
    * @return {@code true} if there is a match, {@code false} otherwise
    */
   protected boolean matches(final Map<String, ?> props) {
-    return  ! (getPropertyValue(Sasl.POLICY_NOPLAINTEXT, props, false) && isPlainText()
-        || getPropertyValue(Sasl.POLICY_NOANONYMOUS, props, false) && isAnonymous()
-        || getPropertyValue(Sasl.POLICY_FORWARD_SECRECY, props, false) && ! isForwardSecrecy()
-        || getPropertyValue(Sasl.POLICY_NOACTIVE, props, false) && isActiveSusceptible()
-        || getPropertyValue(Sasl.POLICY_NODICTIONARY, props, false) && isDictionarySusceptible()
-        || getPropertyValue(Sasl.POLICY_PASS_CREDENTIALS, props, false) && ! isPassCredentials());
+    return !(getPropertyValue(Sasl.POLICY_NOPLAINTEXT, props, false) && isPlainText()
+      || getPropertyValue(Sasl.POLICY_NOANONYMOUS, props, false) && isAnonymous()
+      || getPropertyValue(Sasl.POLICY_FORWARD_SECRECY, props, false) && !isForwardSecrecy()
+      || getPropertyValue(Sasl.POLICY_NOACTIVE, props, false) && isActiveSusceptible()
+      || getPropertyValue(Sasl.POLICY_NODICTIONARY, props, false) && isDictionarySusceptible()
+      || getPropertyValue(Sasl.POLICY_PASS_CREDENTIALS, props, false) && !isPassCredentials());
   }
 
   /**
@@ -116,13 +115,14 @@ public abstract class AbstractSaslFactory {
   /**
    * Get a boolean property value from the properties map.
    *
-   * @param property the property name
-   * @param props the properties map
+   * @param property     the property name
+   * @param props        the properties map
    * @param defaultValue the default value
    * @return the value
    */
   protected boolean getPropertyValue(final String property, final Map<String, ?> props, boolean defaultValue) {
-    return (props == null || ! props.containsKey(property)) ? defaultValue : Boolean.parseBoolean(props.get(property).toString());
+    return (props == null || !props.containsKey(property)) ? defaultValue : Boolean.parseBoolean(props.get(property)
+      .toString());
   }
 
   /**

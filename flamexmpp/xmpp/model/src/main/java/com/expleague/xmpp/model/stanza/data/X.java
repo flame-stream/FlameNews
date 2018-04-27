@@ -21,9 +21,9 @@ import java.util.List;
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ * <p>
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ * <p>
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -49,184 +49,164 @@ import java.util.List;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "instructions",
-    "title",
-    "field",
-    "reported",
-    "item"
+  "instructions",
+  "title",
+  "field",
+  "reported",
+  "item"
 })
 @XmlRootElement(name = "x")
 public class X {
-    protected List<String> instructions;
-    protected String title;
-    protected List<Field> field;
-    protected Reported reported;
-    protected List<Item> item;
-    @XmlAttribute(name = "type", required = true)
-    protected String type;
+  protected List<String> instructions;
+  protected String title;
+  protected List<Field> field;
+  protected Reported reported;
+  protected List<Item> item;
+  @XmlAttribute(name = "type", required = true)
+  protected String type;
 
-    /**
-     * Gets the value of the instructions property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the instructions property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getInstructions().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link String }
-     * 
-     * 
-     */
-    public List<String> getInstructions() {
-        if (instructions == null) {
-            instructions = new ArrayList<String>();
-        }
-        return this.instructions;
+  /**
+   * Gets the value of the instructions property.
+   * <p>
+   * <p>
+   * This accessor method returns a reference to the live list,
+   * not a snapshot. Therefore any modification you make to the
+   * returned list will be present inside the JAXB object.
+   * This is why there is not a <CODE>set</CODE> method for the instructions property.
+   * <p>
+   * <p>
+   * For example, to add a new item, do as follows:
+   * <pre>
+   *    getInstructions().add(newItem);
+   * </pre>
+   * <p>
+   * <p>
+   * <p>
+   * Objects of the following type(s) are allowed in the list
+   * {@link String }
+   */
+  public List<String> getInstructions() {
+    if (instructions == null) {
+      instructions = new ArrayList<String>();
     }
+    return this.instructions;
+  }
 
-    /**
-     * Gets the value of the title property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getTitle() {
-        return title;
-    }
+  /**
+   * Gets the value of the title property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getTitle() {
+    return title;
+  }
 
-    /**
-     * Sets the value of the title property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setTitle(String value) {
-        this.title = value;
-    }
+  /**
+   * Sets the value of the title property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setTitle(String value) {
+    this.title = value;
+  }
 
-    /**
-     * Gets the value of the field property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the field property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getField().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Field }
-     * 
-     * 
-     */
-    public List<Field> getField() {
-        if (field == null) {
-            field = new ArrayList<Field>();
-        }
-        return this.field;
+  /**
+   * Gets the value of the field property.
+   * <p>
+   * <p>
+   * This accessor method returns a reference to the live list,
+   * not a snapshot. Therefore any modification you make to the
+   * returned list will be present inside the JAXB object.
+   * This is why there is not a <CODE>set</CODE> method for the field property.
+   * <p>
+   * <p>
+   * For example, to add a new item, do as follows:
+   * <pre>
+   *    getField().add(newItem);
+   * </pre>
+   * <p>
+   * <p>
+   * <p>
+   * Objects of the following type(s) are allowed in the list
+   * {@link Field }
+   */
+  public List<Field> getField() {
+    if (field == null) {
+      field = new ArrayList<Field>();
     }
+    return this.field;
+  }
 
-    /**
-     * Gets the value of the reported property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Reported }
-     *     
-     */
-    public Reported getReported() {
-        return reported;
-    }
+  /**
+   * Gets the value of the reported property.
+   *
+   * @return possible object is
+   * {@link Reported }
+   */
+  public Reported getReported() {
+    return reported;
+  }
 
-    /**
-     * Sets the value of the reported property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Reported }
-     *     
-     */
-    public void setReported(Reported value) {
-        this.reported = value;
-    }
+  /**
+   * Sets the value of the reported property.
+   *
+   * @param value allowed object is
+   *              {@link Reported }
+   */
+  public void setReported(Reported value) {
+    this.reported = value;
+  }
 
-    /**
-     * Gets the value of the item property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the item property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getItem().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Item }
-     * 
-     * 
-     */
-    public List<Item> getItem() {
-        if (item == null) {
-            item = new ArrayList<Item>();
-        }
-        return this.item;
+  /**
+   * Gets the value of the item property.
+   * <p>
+   * <p>
+   * This accessor method returns a reference to the live list,
+   * not a snapshot. Therefore any modification you make to the
+   * returned list will be present inside the JAXB object.
+   * This is why there is not a <CODE>set</CODE> method for the item property.
+   * <p>
+   * <p>
+   * For example, to add a new item, do as follows:
+   * <pre>
+   *    getItem().add(newItem);
+   * </pre>
+   * <p>
+   * <p>
+   * <p>
+   * Objects of the following type(s) are allowed in the list
+   * {@link Item }
+   */
+  public List<Item> getItem() {
+    if (item == null) {
+      item = new ArrayList<Item>();
     }
+    return this.item;
+  }
 
-    /**
-     * Gets the value of the type property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getType() {
-        return type;
-    }
+  /**
+   * Gets the value of the type property.
+   *
+   * @return possible object is
+   * {@link String }
+   */
+  public String getType() {
+    return type;
+  }
 
-    /**
-     * Sets the value of the type property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setType(String value) {
-        this.type = value;
-    }
+  /**
+   * Sets the value of the type property.
+   *
+   * @param value allowed object is
+   *              {@link String }
+   */
+  public void setType(String value) {
+    this.type = value;
+  }
 
 }

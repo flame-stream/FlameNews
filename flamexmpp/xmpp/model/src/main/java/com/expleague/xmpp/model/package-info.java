@@ -6,9 +6,9 @@
 //
 
 @javax.xml.bind.annotation.XmlSchema(
-    namespace = Stream.NS,
-    elementFormDefault = XmlNsForm.UNQUALIFIED,
-    xmlns = @XmlNs(prefix = "stream", namespaceURI = Stream.NS))
+  namespace = Stream.NS,
+  elementFormDefault = XmlNsForm.UNQUALIFIED,
+  xmlns = @XmlNs(prefix = "stream", namespaceURI = Stream.NS))
 package com.expleague.xmpp.model;
 
 import javax.xml.bind.annotation.XmlNs;

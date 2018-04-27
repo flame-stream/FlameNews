@@ -66,15 +66,16 @@ public class Stanza extends Item {
   public <T extends Item> T copy(@Nullable String idSuffix) {
     final Stanza clone = super.copy();
 
-    if (idSuffix == null)
+    if (idSuffix == null) {
       clone.id = generateId();
-    else if (idSuffix.isEmpty())
+    } else if (idSuffix.isEmpty()) {
       clone.id = id;
-    else
+    } else {
       clone.id = id + "-" + idSuffix;
+    }
 
     //noinspection unchecked
-    return (T)clone;
+    return (T) clone;
   }
 
   public JID to() {
@@ -109,8 +110,7 @@ public class Stanza extends Item {
     if (hasTs()) {
       final String ts = id.substring(id.lastIndexOf('-') + 1);
       return Long.parseLong(ts) * (ts.length() > 10 ? 1 : 1000);
-    }
-    else {
+    } else {
       return System.currentTimeMillis();
     }
   }
@@ -126,8 +126,9 @@ public class Stanza extends Item {
 
   public String strippedVitalikId() {
     final int beginIndex = id.lastIndexOf('-');
-    if (beginIndex > 0)
+    if (beginIndex > 0) {
       return id.substring(0, beginIndex);
+    }
     return id;
   }
 
@@ -138,6 +139,6 @@ public class Stanza extends Item {
 
   @Override
   public boolean equals(Object obj) {
-    return obj instanceof Stanza && ((Stanza)obj).id.equals(id);
+    return obj instanceof Stanza && ((Stanza) obj).id.equals(id);
   }
 }

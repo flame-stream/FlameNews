@@ -20,12 +20,15 @@ public abstract class AbstractSaslServer extends AbstractSaslParticipant impleme
   /**
    * Construct a new instance.
    *
-   * @param mechanismName the name of the defined mechanism
-   * @param protocol the protocol
-   * @param serverName the server name
+   * @param mechanismName   the name of the defined mechanism
+   * @param protocol        the protocol
+   * @param serverName      the server name
    * @param callbackHandler the callback handler
    */
-  protected AbstractSaslServer(final String mechanismName, final String protocol, final String serverName, final CallbackHandler callbackHandler) {
+  protected AbstractSaslServer(final String mechanismName,
+                               final String protocol,
+                               final String serverName,
+                               final CallbackHandler callbackHandler) {
     super(mechanismName, protocol, serverName, callbackHandler);
   }
 
