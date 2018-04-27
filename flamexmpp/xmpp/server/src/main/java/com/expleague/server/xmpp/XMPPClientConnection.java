@@ -136,7 +136,7 @@ public class XMPPClientConnection extends AbstractActor {
 
     final byte[] copy = new byte[data.length()];
     data.asByteBuffer().get(copy);
-    log.debug("> " + new String(copy, StreamTools.UTF));
+    log.debug("IN: " + new String(copy, StreamTools.UTF));
     try {
       asyncXml.getInputFeeder().feedInput(copy, 0, copy.length);
       if (!opened) {
@@ -162,7 +162,7 @@ public class XMPPClientConnection extends AbstractActor {
       xml = item.xmlString(false);
     }
 
-    log.debug("< " + xml);
+    log.debug("OUT: " + xml);
     final ByteString data = ByteString.fromString(xml);
     if (currentState != ConnectionState.HANDSHAKE && currentState != ConnectionState.STARTTLS) {
       helper.encrypt(data, this::output);
