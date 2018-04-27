@@ -41,7 +41,7 @@ public class XMPPServices extends AbstractActor {
       service.forward(iq, context());
     } else {
       sender().tell(
-        Iq.answer(iq, new Err(Err.Cause.SERVICE_UNAVAILABLE, Err.ErrType.CANCEL, "Service is not supported")),
+        Iq.error(iq, new Err(Err.Cause.SERVICE_UNAVAILABLE, Err.ErrType.CANCEL, "Service is not supported")),
         self()
       );
     }

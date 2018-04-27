@@ -80,10 +80,10 @@ public class AuthorizationPhase extends XMPPPhase {
           // TODO: 4/15/18  
           answer(Iq.answer(request));
         } catch (IllegalArgumentException integrity) {
-          answer(Iq.answer(request, new Err(Err.Cause.CONFLICT, Err.ErrType.AUTH, integrity.getMessage())));
+          answer(Iq.error(request, new Err(Err.Cause.CONFLICT, Err.ErrType.AUTH, integrity.getMessage())));
         } catch (Exception e) {
           log.error(e, "Exception during user registration");
-          answer(Iq.answer(request, new Err(Err.Cause.INTERNAL_SERVER_ERROR, Err.ErrType.AUTH, e.getMessage())));
+          answer(Iq.error(request, new Err(Err.Cause.INTERNAL_SERVER_ERROR, Err.ErrType.AUTH, e.getMessage())));
         }
       }
     }

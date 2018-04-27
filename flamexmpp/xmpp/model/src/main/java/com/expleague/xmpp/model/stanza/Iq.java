@@ -26,9 +26,9 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * <p>Java class for anonymous complex type.
- * 
+ *
  * <p>The following schema fragment specifies the expected content contained within this class.
- * 
+ *
  * <pre>
  * &lt;complexType>
  *   &lt;complexContent>
@@ -55,8 +55,8 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
+ *
+ *
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
@@ -77,6 +77,13 @@ public class Iq<T> extends Stanza {
     return answer(request, null);
   }
 
+  public static Iq<Err> error(Iq<?> request, Err content) {
+    final Iq<Err> result = new Iq<>(request.id, IqType.ERROR, content);
+    result.from = request.to;
+    result.to = request.from;
+    return result;
+  }
+
   public static <T extends Item> Iq<T> create(JID to, JID from, IqType type, T item) {
     final Iq<T> iq = new Iq<>();
     iq.from(from);
@@ -86,13 +93,6 @@ public class Iq<T> extends Stanza {
     return iq;
   }
 
-  public static <T> Iq<T> error(Iq<T> request) {
-    final Iq<T> result = new Iq<>(request.id, IqType.ERROR, null);
-    result.from = request.to;
-    result.to = request.from;
-    return result;
-  }
-
   @XmlAnyElement(lax = true)
   protected T any;
   @XmlElementRef
@@ -100,18 +100,15 @@ public class Iq<T> extends Stanza {
   @XmlAttribute
   private IqType type;
 
-  public Iq(){}
+  public Iq() {}
 
   private Iq(String id, IqType type, T content) {
     super(id);
     this.type = type;
-    if (content instanceof Err) {
-      this.error = (Err) content;
-      this.type = IqType.ERROR;
-    }
 
-    else if (content != null)
+    if (content != null) {
       this.any = content;
+    }
   }
 
   public T get() {

@@ -150,7 +150,7 @@ public class RosterService extends AbstractActor {
 
     if (item == null) {
       sender().tell(
-        Iq.answer(setQuery, new Err(Err.Cause.ITEM_NOT_FOUND, Err.ErrType.MODIFY, "No such element")),
+        Iq.error(setQuery, new Err(Err.Cause.ITEM_NOT_FOUND, Err.ErrType.MODIFY, "No such element")),
         self()
       );
       return;
