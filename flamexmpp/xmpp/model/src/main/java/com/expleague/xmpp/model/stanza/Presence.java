@@ -274,11 +274,35 @@ public class Presence extends Stanza implements AnyHolder {
   public enum PresenceType {
     @XmlEnumValue(value = "error") ERROR,
     @XmlEnumValue(value = "probe") PROBE,
-    @XmlEnumValue(value = "subscribe") SUBSCRIBE,
-    @XmlEnumValue(value = "unsubscribe") UNSUBSCRIBE,
-    @XmlEnumValue(value = "subscribed") SUBSCRIBED,
-    @XmlEnumValue(value = "unsubscribed") UNSUBSCRIBED,
     @XmlEnumValue(value = "available") AVAILABLE,
     @XmlEnumValue(value = "unavailable") UNAVAILABLE,
+    @XmlEnumValue(value = "subscribe") SUBSCRIBE {
+      @Override
+      public boolean isSubscriptionManagement() {
+        return true;
+      }
+    },
+    @XmlEnumValue(value = "unsubscribe") UNSUBSCRIBE {
+      @Override
+      public boolean isSubscriptionManagement() {
+        return true;
+      }
+    },
+    @XmlEnumValue(value = "subscribed") SUBSCRIBED {
+      @Override
+      public boolean isSubscriptionManagement() {
+        return true;
+      }
+    },
+    @XmlEnumValue(value = "unsubscribed") UNSUBSCRIBED {
+      @Override
+      public boolean isSubscriptionManagement() {
+        return true;
+      }
+    };
+
+    public boolean isSubscriptionManagement() {
+      return false;
+    }
   }
 }

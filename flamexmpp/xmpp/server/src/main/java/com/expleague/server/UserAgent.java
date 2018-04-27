@@ -12,13 +12,17 @@ import com.expleague.xmpp.model.stanza.Iq;
 import com.expleague.xmpp.model.stanza.Presence;
 import com.expleague.xmpp.model.stanza.Stanza;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UserAgent extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(context().system(), self());
   private final ActorRef xmpp;
   private final JID bare;
+
+  private final List<Presence> pendingSubscriptions = new ArrayList<>();
 
   // Resource -> Connection
   private final Map<String, ActorRef> connections = new HashMap<>();
@@ -36,7 +40,7 @@ public class UserAgent extends AbstractActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
       .match(ConnStatus.class, this::onStatus)
-      .match(Presence.class, this::deliverPresence)
+      .match(Presence.class, this::deliver)
       .match(Iq.class, this::rosterPush)
       .match(Stanza.class, this::deliver)
       .build();
@@ -45,6 +49,10 @@ public class UserAgent extends AbstractActor {
   private void onStatus(ConnStatus status) {
     if (status.connected) {
       connections.put(status.resource, sender());
+      if (connections.size() == 1) {
+        pendingSubscriptions.forEach(p -> sender().tell(p, self()));
+        pendingSubscriptions.clear();
+      }
     } else {
       connections.remove(status.resource);
       if (connections.isEmpty()) {
@@ -63,16 +71,21 @@ public class UserAgent extends AbstractActor {
     }
   }
 
-  private void deliverPresence(Presence presence) {
+  private void deliver(Presence presence) {
     connections.forEach((resource, ref) -> {
       final Stanza to = ((Presence) presence.copy()).to(bare.resource(resource));
       ref.tell(to, sender());
     });
+
+    if (connections.isEmpty() && presence.type() == Presence.PresenceType.SUBSCRIBE) {
+      log.info("There are no available connections for adding presence to pending list");
+      pendingSubscriptions.add(presence);
+    }
   }
 
   private void broadcast(Stanza message) {
     connections.forEach((resource, ref) -> {
-      final Stanza to = ((Presence) message.copy()).to(bare.resource(resource));
+      final Stanza to = ((Stanza) message.copy()).to(bare.resource(resource));
       ref.tell(to, sender());
     });
   }

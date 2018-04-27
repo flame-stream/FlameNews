@@ -89,10 +89,9 @@ public class RosterQuery extends XMPPQuery {
       this.name = name;
     }
 
-    public RosterItem(JID jid, Subscription subscription, String name, Ask ask) {
+    public RosterItem(JID jid, Subscription subscription,  Ask ask) {
       this.jid = jid;
       this.subscription = subscription;
-      this.name = name;
       this.ask = ask;
     }
 

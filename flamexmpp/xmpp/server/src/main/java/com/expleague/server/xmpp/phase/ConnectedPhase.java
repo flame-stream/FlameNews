@@ -14,6 +14,7 @@ import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.Bind;
 import com.expleague.xmpp.model.control.Close;
 import com.expleague.xmpp.model.stanza.Iq;
+import com.expleague.xmpp.model.stanza.Presence;
 import com.expleague.xmpp.model.stanza.Stanza;
 import org.jetbrains.annotations.Nullable;
 import scala.concurrent.duration.Duration;
@@ -87,13 +88,12 @@ public class ConnectedPhase extends XMPPPhase {
       return;
     }
 
-    if (jid.equals(stanza.to())) {
+    if (jid.bareEq(stanza.to())) {
       // incoming
       answer(stanza);
     } else {
       // outgoing
-      stanza.from(jid);
-      xmpp.tell(stanza, self());
+      xmpp.tell(stampWithFrom(stanza), self());
     }
   }
 
@@ -128,6 +128,18 @@ public class ConnectedPhase extends XMPPPhase {
     } else {
       return false;
     }
+  }
+
+  private Stanza stampWithFrom(Stanza stanza) {
+    if (stanza instanceof Presence
+      && ((Presence) stanza).type() != null
+      && ((Presence) stanza).type().isSubscriptionManagement()) {
+      stanza.from(jid.bare());
+    } else {
+      stanza.from(jid);
+    }
+
+    return stanza;
   }
 
   private void onClose(Close close) {

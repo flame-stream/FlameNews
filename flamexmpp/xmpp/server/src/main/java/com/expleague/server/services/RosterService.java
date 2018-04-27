@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem;
+import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem.Ask;
 import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem.Subscription;
 
 /**
@@ -85,18 +86,59 @@ public class RosterService extends AbstractActor {
   }
 
   private void onSubscription(Presence presence) {
-    final JID contact = presence.from().bare();
-    final JID requester = presence.to().bare();
+    final JID from = presence.from();
+    final JID to = presence.to();
+    if (to.hasResource() || from.hasResource()) {
+      log.error("Presence has resource: {}", presence);
+      return;
+    }
 
     switch (presence.type()) {
       case SUBSCRIBED:
-        subscribe(contact, requester);
+        subscribe(to, from);
+        rosterPush(to, roster.item(to.local(), from));
+        rosterPush(from, roster.item(from.local(), to));
         break;
       case UNSUBSCRIBED:
-        unsubscribe(contact, requester);
+        unsubscribe(to, from);
+        rosterPush(to, roster.item(to.local(), from));
+        rosterPush(from, roster.item(from.local(), to));
         break;
+      case SUBSCRIBE:
+        askSubscribe(from, to);
+        rosterPush(from, roster.item(from.local(), to));
+        break;
+      case UNSUBSCRIBE:
+        askUnsubscribe(from, to);
+        rosterPush(from, roster.item(from.local(), to));
+        break;
+      default:
+        unhandled(presence);
     }
-    rosterPush(presence.to(), roster.item(requester.local(), contact));
+  }
+
+  private void askSubscribe(JID requester, JID contact) {
+    @Nullable final RosterItem requesterView = roster.item(requester.local(), contact);
+
+    if (requesterView == null) {
+      roster.create(requester.local(), new RosterItem(contact, Subscription.NONE, Ask.SUBSCRIBE));
+    } else if (requesterView.subscription() == Subscription.NONE) {
+      roster.update(requester.local(), new RosterItem(contact, Subscription.NONE, Ask.SUBSCRIBE));
+    } else {
+      log.warning("AskSubscribe unhandled case requester: {}, contact: {}", requester, contact);
+    }
+  }
+
+  private void askUnsubscribe(JID requester, JID contact) {
+    @Nullable final RosterItem requesterView = roster.item(requester.local(), contact);
+
+    if (requesterView == null) {
+      // do nothing
+    } else if (requesterView.subscription() == Subscription.NONE) {
+      roster.update(requester.local(), new RosterItem(contact, Subscription.NONE, Ask.SUBSCRIBE));
+    } else {
+      log.warning("AskUnsubscribe unhandled case requester: {}, contact: {}", requester, contact);
+    }
   }
 
   private void subscribe(JID requester, JID contact) {
@@ -109,6 +151,8 @@ public class RosterService extends AbstractActor {
       roster.update(requester.local(), new RosterItem(contact, Subscription.TO));
     } else if (requesterView.subscription() == Subscription.FROM) {
       roster.update(requester.local(), new RosterItem(contact, Subscription.BOTH));
+    } else {
+      log.warning("Subscribe unhandled case requester: {}, contact: {}", requester, contact);
     }
 
     if (contactView == null) {
@@ -117,6 +161,8 @@ public class RosterService extends AbstractActor {
       roster.update(contact.local(), new RosterItem(requester, Subscription.FROM));
     } else if (contactView.subscription() == Subscription.TO) {
       roster.update(contact.local(), new RosterItem(requester, Subscription.BOTH));
+    } else {
+      log.warning("Subscribe unhandled case requester: {}, contact: {}", requester, contact);
     }
   }
 
@@ -126,10 +172,15 @@ public class RosterService extends AbstractActor {
 
     if (requesterView == null) {
       // do nothing
+    } else if (requesterView.subscription() == Subscription.NONE) {
+      // Remove possible ask
+      roster.update(requester.local(), new RosterItem(contact, Subscription.NONE));
     } else if (requesterView.subscription() == Subscription.TO) {
-      roster.remove(requester.local(), contact);
+      roster.update(requester.local(), new RosterItem(contact, Subscription.NONE));
     } else if (requesterView.subscription() == Subscription.BOTH) {
       roster.update(requester.local(), new RosterItem(contact, Subscription.FROM));
+    } else {
+      log.warning("Unsubscribe unhandled case requester: {}, contact: {}", requester, contact);
     }
 
     if (contactView == null) {
@@ -138,15 +189,17 @@ public class RosterService extends AbstractActor {
       roster.update(contact.local(), new RosterItem(requester, Subscription.NONE));
     } else if (contactView.subscription() == Subscription.BOTH) {
       roster.update(contact.local(), new RosterItem(requester, Subscription.TO));
+    } else {
+      log.warning("Unsubscribe unhandled case requester: {}, contact: {}", requester, contact);
     }
   }
 
   private void remove(Iq<RosterQuery> setQuery) {
-    final JID contact = setQuery.get().items().get(0).jid();
+    final JID contact = setQuery.get().items().get(0).jid().bare();
     final JID requester = setQuery.from();
-    final RosterItem item = roster.item(requester.local(), contact.bare());
+    final RosterItem item = roster.item(requester.local(), contact);
 
-    log.debug("Removing roster item: local='{}', contact='{}'", requester, contact.bare());
+    log.info("Removing roster item: local='{}', contact='{}'", requester, contact);
 
     if (item == null) {
       sender().tell(
@@ -156,18 +209,18 @@ public class RosterService extends AbstractActor {
       return;
     }
 
-    roster.remove(requester.local(), contact.bare());
+    roster.remove(requester.local(), contact);
     sender().tell(Iq.answer(setQuery), self());
-    rosterPush(requester, new RosterItem(contact.bare(), Subscription.REMOVE));
+    rosterPush(requester, new RosterItem(contact, Subscription.REMOVE));
 
     if (item.subscription() == Subscription.TO || item.subscription() == Subscription.BOTH) {
-      unsubscribe(requester.bare(), contact.bare());
-      context().parent().tell(new Presence(requester.bare(), contact.bare(), PresenceType.UNSUBSCRIBE), self());
+      unsubscribe(requester, contact);
+      context().parent().tell(new Presence(requester, contact, PresenceType.UNSUBSCRIBE), self());
     }
 
     if (item.subscription() == Subscription.FROM || item.subscription() == Subscription.BOTH) {
-      unsubscribe(contact.bare(), requester.bare());
-      context().parent().tell(new Presence(requester.bare(), contact.bare(), PresenceType.UNSUBSCRIBED), self());
+      unsubscribe(contact, requester.bare());
+      context().parent().tell(new Presence(requester.bare(), contact, PresenceType.UNSUBSCRIBED), self());
     }
   }
 
