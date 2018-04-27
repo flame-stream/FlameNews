@@ -79,6 +79,7 @@ public class XMPP extends AbstractActor {
         });
     } else if (presence.type().isSubscriptionManagement()) {
       roster.tell(presence, self());
+      // TODO: 4/27/18 check if there is really pending subscription
       findOrAllocate(presence.to()).forward(presence, context());
     } else {
       findOrAllocate(presence.to()).forward(presence, context());

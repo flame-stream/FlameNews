@@ -65,29 +65,37 @@ public class UserAgent extends AbstractActor {
 
   private void rosterPush(Iq<?> iq) {
     if (iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET) {
-      broadcast(iq);
+      connections.forEach((resource, ref) -> {
+        final Stanza to = ((Stanza) iq.copy()).to(bare.resource(resource));
+        ref.tell(to, sender());
+      });
     } else {
       deliver(iq);
     }
   }
 
   private void deliver(Presence presence) {
-    connections.forEach((resource, ref) -> {
-      final Stanza to = ((Presence) presence.copy()).to(bare.resource(resource));
-      ref.tell(to, sender());
-    });
+    if (presence.type() == Presence.PresenceType.SUBSCRIBED) {
+      for (String resource : connections.keySet()) {
+        xmpp.tell(new Presence(bare.resource(resource), presence.from(), Presence.PresenceType.AVAILABLE), self());
+        xmpp.tell(new Presence(bare, presence.from(), Presence.PresenceType.PROBE), self());
+      }
+      connections.forEach((resource, ref) -> ref.tell(presence, sender()));
+    } else if (presence.type() == Presence.PresenceType.PROBE) {
+      connections.keySet().forEach(resource -> {
+        sender().tell(new Presence(bare.resource(resource), presence.from(), Presence.PresenceType.AVAILABLE), self());
+      });
+    } else {
+      connections.forEach((resource, ref) -> {
+        final Presence to = ((Presence) presence.copy()).to(bare.resource(resource));
+        ref.tell(to, sender());
+      });
+    }
 
     if (connections.isEmpty() && presence.type() == Presence.PresenceType.SUBSCRIBE) {
       log.info("There are no available connections for adding presence to pending list");
       pendingSubscriptions.add(presence);
     }
-  }
-
-  private void broadcast(Stanza message) {
-    connections.forEach((resource, ref) -> {
-      final Stanza to = ((Stanza) message.copy()).to(bare.resource(resource));
-      ref.tell(to, sender());
-    });
   }
 
   private void deliver(Stanza stanza) {
