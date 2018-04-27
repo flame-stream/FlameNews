@@ -7,6 +7,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.PatternsCS;
+import com.expleague.server.services.Roster;
 import com.expleague.server.services.RosterService;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.xmpp.model.JID;
@@ -20,13 +21,12 @@ import java.util.Optional;
 
 public class XMPP extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(context().system(), self());
-  private final JID hostJID = JID.parse(XMPPServerApplication.config().domain());
 
   private final ActorRef services;
   private final ActorRef roster;
 
   public XMPP() {
-    this.roster = context().actorOf(RosterService.props(), "roster");
+    this.roster = context().actorOf(RosterService.props(self(), new Roster.InMemRoster()), "roster");
     this.services = context().actorOf(XMPPServices.props(roster), "services");
   }
 

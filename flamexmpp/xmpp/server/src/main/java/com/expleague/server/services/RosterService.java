@@ -1,6 +1,7 @@
 package com.expleague.server.services;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -13,6 +14,7 @@ import com.expleague.xmpp.model.stanza.Presence.PresenceType;
 import com.expleague.xmpp.model.stanza.data.Err;
 import org.jetbrains.annotations.Nullable;
 
+import javax.activity.ActivityRequiredException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +31,16 @@ import static com.expleague.xmpp.model.control.roster.RosterQuery.RosterItem.Sub
 public class RosterService extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(context().system(), self());
 
-  private final Roster roster = new Roster.InMemRoster();
+  private final Roster roster;
+  private final ActorRef xmpp;
 
-  public static Props props() {
-    return Props.create(RosterService.class);
+  public RosterService(ActorRef xmpp, Roster roster) {
+    this.roster = roster;
+    this.xmpp = xmpp;
+  }
+
+  public static Props props(ActorRef xmpp, Roster roster) {
+    return Props.create(RosterService.class, xmpp, roster);
   }
 
   @Override
@@ -106,12 +114,12 @@ public class RosterService extends AbstractActor {
 
     if (item.subscription() == Subscription.TO || item.subscription() == Subscription.BOTH) {
       unsubscribe(requester, contact);
-      context().parent().tell(new Presence(requester, contact, PresenceType.UNSUBSCRIBE), self());
+      //xmpp.tell(new Presence(requester, contact, PresenceType.UNSUBSCRIBE), self());
     }
 
     if (item.subscription() == Subscription.FROM || item.subscription() == Subscription.BOTH) {
       unsubscribe(contact, requester.bare());
-      context().parent().tell(new Presence(requester.bare(), contact, PresenceType.UNSUBSCRIBED), self());
+      //xmpp.tell(new Presence(requester.bare(), contact, PresenceType.UNSUBSCRIBED), self());
     }
   }
 
@@ -124,6 +132,14 @@ public class RosterService extends AbstractActor {
     }
 
     switch (presence.type()) {
+      case SUBSCRIBE:
+        askSubscribe(from, to);
+        rosterPush(from, roster.item(from.local(), to));
+        break;
+      case UNSUBSCRIBE:
+        askUnsubscribe(from, to);
+        rosterPush(from, roster.item(from.local(), to));
+        break;
       case SUBSCRIBED:
         subscribe(to, from);
         rosterPush(to, roster.item(to.local(), from));
@@ -132,14 +148,6 @@ public class RosterService extends AbstractActor {
       case UNSUBSCRIBED:
         unsubscribe(to, from);
         rosterPush(to, roster.item(to.local(), from));
-        rosterPush(from, roster.item(from.local(), to));
-        break;
-      case SUBSCRIBE:
-        askSubscribe(from, to);
-        rosterPush(from, roster.item(from.local(), to));
-        break;
-      case UNSUBSCRIBE:
-        askUnsubscribe(from, to);
         rosterPush(from, roster.item(from.local(), to));
         break;
       default:
@@ -232,7 +240,7 @@ public class RosterService extends AbstractActor {
       Iq.IqType.SET,
       query
     );
-    context().parent().tell(rosterQueryIq, self());
+    xmpp.tell(rosterQueryIq, self());
   }
 
   private void getSubscribers(JID requester) {
