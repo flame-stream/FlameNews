@@ -2,6 +2,7 @@ package com.expleague.server;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import com.expleague.server.xmpp.XMPPClientConnection;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -21,6 +22,8 @@ public class XMPPServerApplication {
 
   public static void main(String[] args) throws Exception {
     final Config load = ConfigFactory.load();
+    final boolean unitTestEnabled = Boolean.parseBoolean(System.getProperty("unitTestEnabled", "true"));
+    XMPPClientConnection.setUnitTestEnabled(unitTestEnabled);
     setConfig(new ServerCfg(load));
 
     final ActorSystem system = ActorSystem.create("xmpp-server", load);

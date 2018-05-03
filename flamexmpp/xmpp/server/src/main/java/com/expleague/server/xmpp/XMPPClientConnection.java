@@ -354,7 +354,9 @@ public class XMPPClientConnection extends AbstractActor {
                                                                       final String privateKeyPassword) throws
                                                                                                        SSLException {
     return SslContextBuilder.forServer(privateKey, privateKeyPassword, certificate)
-      .sslProvider(unitTestEnabled ? SslProvider.JDK : SslProvider.OPENSSL)
+      // FIXME: 5/3/18 Upgrade version of TCP-native so that libssl.so.1.0.0 would be obtained not by softlink but by exact package
+      .sslProvider(SslProvider.JDK)
+      //.sslProvider(unitTestEnabled ? SslProvider.JDK : SslProvider.OPENSSL)
       //        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
       .build();
   }
