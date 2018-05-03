@@ -14,7 +14,6 @@ import com.expleague.xmpp.model.stanza.Presence.PresenceType;
 import com.expleague.xmpp.model.stanza.data.Err;
 import org.jetbrains.annotations.Nullable;
 
-import javax.activity.ActivityRequiredException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
