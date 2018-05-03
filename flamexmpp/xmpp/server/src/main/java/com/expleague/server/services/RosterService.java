@@ -47,6 +47,8 @@ public class RosterService extends AbstractActor {
     return ReceiveBuilder.create()
       .match(Iq.class, iq -> iq.type() == Iq.IqType.GET, this::onGet)
       .match(Iq.class, iq -> iq.type() == Iq.IqType.SET, this::onSet)
+      .match(GetSubsriptions.class, g -> getSubscriptions(g.requester))
+      .match(GetSubscribers.class, g -> getSubscribers(g.contact))
       .match(JID.class, this::getSubscribers)
       .match(
         Presence.class,
@@ -242,11 +244,35 @@ public class RosterService extends AbstractActor {
     xmpp.tell(rosterQueryIq, self());
   }
 
-  private void getSubscribers(JID requester) {
-    final List<JID> collect = roster.items(requester.local())
+  private void getSubscribers(JID contact) {
+    final List<JID> collect = roster.items(contact.local())
       .filter(i -> i.subscription() == Subscription.TO || i.subscription() == Subscription.BOTH)
       .map(RosterItem::jid)
       .collect(Collectors.toList());
     sender().tell(collect, self());
+  }
+
+  private void getSubscriptions(JID requester) {
+    final List<JID> collect = roster.items(requester.local())
+      .filter(i -> i.subscription() == Subscription.FROM || i.subscription() == Subscription.BOTH)
+      .map(RosterItem::jid)
+      .collect(Collectors.toList());
+    sender().tell(collect, self());
+  }
+
+  public static class GetSubscribers {
+    public final JID contact;
+
+    public GetSubscribers(JID contact) {
+      this.contact = contact;
+    }
+  }
+
+  public static class GetSubsriptions {
+    public final JID requester;
+
+    public GetSubsriptions(JID requester) {
+      this.requester = requester;
+    }
   }
 }

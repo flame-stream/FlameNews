@@ -14,7 +14,6 @@ import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.stanza.Iq;
 import com.expleague.xmpp.model.stanza.Message;
 import com.expleague.xmpp.model.stanza.Presence;
-import com.expleague.xmpp.model.stanza.Presence.PresenceType;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +40,9 @@ public class XMPP extends AbstractActor {
       .match(Message.class, this::onMessage)
       .match(Presence.class, this::onPresence)
       .match(JID.class, this::onJID)
+      // Forward
+      .match(RosterService.GetSubscribers.class, g -> roster.forward(g, context()))
+      .match(RosterService.GetSubsriptions.class, g -> roster.forward(g, context()))
       .build();
   }
 
@@ -70,7 +72,7 @@ public class XMPP extends AbstractActor {
   private void onPresence(Presence presence) {
     if (presence.to() == null) {
       // Broadcast to subscribers
-      PatternsCS.ask(roster, presence.from(), 10000)
+      PatternsCS.ask(roster, new RosterService.GetSubscribers(presence.from()), 10000)
         .thenApply(list -> (List<JID>) list)
         .thenAccept(subscribers -> {
           subscribers.forEach(subscriber -> {

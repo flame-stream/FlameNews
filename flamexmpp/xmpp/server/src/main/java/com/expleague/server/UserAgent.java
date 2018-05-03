@@ -6,6 +6,8 @@ import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.PatternsCS;
+import com.expleague.server.services.RosterService;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.roster.RosterQuery;
 import com.expleague.xmpp.model.stanza.Iq;
@@ -40,9 +42,9 @@ public class UserAgent extends AbstractActor {
   public Receive createReceive() {
     return ReceiveBuilder.create()
       .match(ConnStatus.class, this::onStatus)
-      .match(Presence.class, this::deliver)
-      .match(Iq.class, this::rosterPush)
-      .match(Stanza.class, this::deliver)
+      .match(Presence.class, this::onPresence)
+      .match(Iq.class, iq -> iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET, this::onRosterPush)
+      .match(Stanza.class, this::onStanza)
       .build();
   }
 
@@ -52,10 +54,19 @@ public class UserAgent extends AbstractActor {
       if (connections.size() == 1) {
         pendingSubscriptions.forEach(p -> sender().tell(p, self()));
         pendingSubscriptions.clear();
+
+        // Initial presence
+        PatternsCS.ask(xmpp, new RosterService.GetSubsriptions(bare), 10000)
+          .thenApply(a -> (List<JID>) a)
+          .thenAccept(subscriptions -> {
+            for (JID s : subscriptions) {
+              xmpp.tell(new Presence(bare, s, Presence.PresenceType.PROBE), self());
+            }
+          });
       }
     } else {
       connections.remove(status.resource);
-      if (connections.isEmpty()) {
+      if (!online()) {
         log.debug("All connections are closed, stopping user agent");
         xmpp.tell(new Presence(bare, false), self());
         context().stop(self());
@@ -63,18 +74,14 @@ public class UserAgent extends AbstractActor {
     }
   }
 
-  private void rosterPush(Iq<?> iq) {
-    if (iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET) {
-      connections.forEach((resource, ref) -> {
-        final Stanza to = ((Stanza) iq.copy()).to(bare.resource(resource));
-        ref.tell(to, sender());
-      });
-    } else {
-      deliver(iq);
-    }
+  private void onRosterPush(Iq<?> iq) {
+    connections.forEach((resource, ref) -> {
+      final Stanza to = ((Stanza) iq.copy()).to(bare.resource(resource));
+      ref.tell(to, sender());
+    });
   }
 
-  private void deliver(Presence presence) {
+  private void onPresence(Presence presence) {
     if (presence.type() == Presence.PresenceType.SUBSCRIBED) {
       for (String resource : connections.keySet()) {
         xmpp.tell(new Presence(bare.resource(resource), presence.from(), Presence.PresenceType.AVAILABLE), self());
@@ -92,13 +99,13 @@ public class UserAgent extends AbstractActor {
       });
     }
 
-    if (connections.isEmpty() && presence.type() == Presence.PresenceType.SUBSCRIBE) {
+    if (!online() && presence.type() == Presence.PresenceType.SUBSCRIBE) {
       log.info("There are no available connections for adding presence to pending list");
       pendingSubscriptions.add(presence);
     }
   }
 
-  private void deliver(Stanza stanza) {
+  private void onStanza(Stanza stanza) {
     if (!online()) {
       log.info("User is offline, discarding stanza. id = '{}'", stanza.id() == null ? "null" : stanza.id());
       return;
