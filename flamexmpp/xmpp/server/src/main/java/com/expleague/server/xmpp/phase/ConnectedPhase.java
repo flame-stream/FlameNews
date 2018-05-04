@@ -13,7 +13,11 @@ import com.expleague.xmpp.model.Features;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.Bind;
 import com.expleague.xmpp.model.control.Close;
+import com.expleague.xmpp.model.control.receipts.Delivered;
+import com.expleague.xmpp.model.control.receipts.Received;
+import com.expleague.xmpp.model.control.receipts.Request;
 import com.expleague.xmpp.model.stanza.Iq;
+import com.expleague.xmpp.model.stanza.Message;
 import com.expleague.xmpp.model.stanza.Presence;
 import com.expleague.xmpp.model.stanza.Stanza;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +37,8 @@ public class ConnectedPhase extends XMPPPhase {
   private final ActorRef xmpp;
 
   private boolean bound = false;
+  private long clientTsDiff;
+  private boolean synched;
 
   // Is updated upon bind
   private JID jid;
@@ -89,11 +95,24 @@ public class ConnectedPhase extends XMPPPhase {
     }
 
     if (jid.bareEq(stanza.to())) {
-      // incoming
-      answer(stanza);
+      // to connection
+      if (stanza instanceof Message) {
+        answer(tryRequestMessageReceipt((Message) stanza));
+      } else {
+        answer(stanza);
+      }
     } else {
-      // outgoing
-      xmpp.tell(stampWithFrom(stanza), self());
+      // from connection
+      if (stanza instanceof Message) {
+        final Message message = (Message) stanza;
+        final Message.Timestamp ts = new Message.Timestamp(synched ? message.ts() + clientTsDiff : System.currentTimeMillis());
+        message.append(ts);
+        tryProcessMessageReceipt(message);
+      }
+
+      if (!isDeliveryReceipt(stanza)) {
+        xmpp.tell(stampWithFrom(stanza), self());
+      }
     }
   }
 
@@ -101,6 +120,11 @@ public class ConnectedPhase extends XMPPPhase {
     if (stanza instanceof Iq) {
       final Iq<?> iq = ((Iq<?>) stanza);
       if (iq.type() == Iq.IqType.SET && iq.get() instanceof Bind) {
+        if (iq.hasTs()) { //ts diff between client and server
+          clientTsDiff = System.currentTimeMillis() - iq.ts();
+          synched = true;
+        }
+        else synched = false;
         final Bind payload = ((Bind) iq.get());
         final String resource;
         {
@@ -128,6 +152,28 @@ public class ConnectedPhase extends XMPPPhase {
     } else {
       return false;
     }
+  }
+
+  private Stanza tryRequestMessageReceipt(Message message) {
+    if (!message.has(Received.class) && !message.has(Request.class)) {
+      message.append(new Request());
+    }
+    return message;
+  }
+
+  private void tryProcessMessageReceipt(Message message) {
+    if (message.has(Received.class)) {
+      final String messageId = message.get(Received.class).id();
+      userAgent.tell(new Delivered(messageId, jid.bare(), jid.resource()), self());
+    } else if (message.has(Request.class)) {
+      final Message ack = new Message(message.from(), new Received(message.id()));
+      answer(ack);
+      message.remove(Request.class);
+    }
+  }
+
+  protected boolean isDeliveryReceipt(final Stanza stanza) {
+    return stanza instanceof Message && ((Message) stanza).has(Received.class);
   }
 
   private Stanza stampWithFrom(Stanza stanza) {

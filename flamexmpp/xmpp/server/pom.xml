@@ -37,6 +37,10 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-http_2.11</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-persistence_2.11</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
