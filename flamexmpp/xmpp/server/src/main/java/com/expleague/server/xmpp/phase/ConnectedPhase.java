@@ -94,7 +94,7 @@ public class ConnectedPhase extends XMPPPhase {
       return;
     }
 
-    if (jid.bareEq(stanza.to())) {
+    if (stanza.to().bareEq(jid)) {
       // to connection
       if (stanza instanceof Message) {
         answer(tryRequestMessageReceipt((Message) stanza));
@@ -125,7 +125,7 @@ public class ConnectedPhase extends XMPPPhase {
           synced = true;
         }
         else synced = false;
-        final Bind payload = ((Bind) iq.get());
+        final Bind payload = (Bind) iq.get();
         final String resource;
         {
           final String providedResource = payload.resource();
@@ -172,7 +172,7 @@ public class ConnectedPhase extends XMPPPhase {
     }
   }
 
-  protected boolean isDeliveryReceipt(final Stanza stanza) {
+  private boolean isDeliveryReceipt(Stanza stanza) {
     return stanza instanceof Message && ((Message) stanza).has(Received.class);
   }
 
