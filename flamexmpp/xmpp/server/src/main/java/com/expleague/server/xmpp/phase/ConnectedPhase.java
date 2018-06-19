@@ -38,7 +38,7 @@ public class ConnectedPhase extends XMPPPhase {
 
   private boolean bound = false;
   private long clientTsDiff;
-  private boolean synched;
+  private boolean synced;
 
   // Is updated upon bind
   private JID jid;
@@ -105,7 +105,7 @@ public class ConnectedPhase extends XMPPPhase {
       // from connection
       if (stanza instanceof Message) {
         final Message message = (Message) stanza;
-        final Message.Timestamp ts = new Message.Timestamp(synched ? message.ts() + clientTsDiff : System.currentTimeMillis());
+        final Message.Timestamp ts = new Message.Timestamp(synced ? message.ts() + clientTsDiff : System.currentTimeMillis());
         message.append(ts);
         tryProcessMessageReceipt(message);
       }
@@ -122,9 +122,9 @@ public class ConnectedPhase extends XMPPPhase {
       if (iq.type() == Iq.IqType.SET && iq.get() instanceof Bind) {
         if (iq.hasTs()) { //ts diff between client and server
           clientTsDiff = System.currentTimeMillis() - iq.ts();
-          synched = true;
+          synced = true;
         }
-        else synched = false;
+        else synced = false;
         final Bind payload = ((Bind) iq.get());
         final String resource;
         {
