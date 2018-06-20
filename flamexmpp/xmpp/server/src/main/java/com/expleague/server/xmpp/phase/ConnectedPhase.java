@@ -94,7 +94,7 @@ public class ConnectedPhase extends XMPPPhase {
       return;
     }
 
-    if (stanza.to().bareEq(jid)) {
+    if (stanza.to() != null && stanza.to().bareEq(jid)) {
       // to connection
       if (stanza instanceof Message) {
         answer(tryRequestMessageReceipt((Message) stanza));
