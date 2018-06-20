@@ -90,7 +90,7 @@ public class UserAgent extends AbstractPersistentActor {
         self().forward(status, context());
       } else {
         connected.add(resource);
-        courier = context().actorOf(Courier.props(bareJid.resource(status.resource), sender()), actorResourceAddr);
+        courier = context().actorOf(Courier.props(bareJid.resource(status.resource), sender(), xmpp), actorResourceAddr);
         sender().tell(courier, self());
       }
 
@@ -204,6 +204,7 @@ public class UserAgent extends AbstractPersistentActor {
   private static final class Courier extends AbstractPersistentActor {
     private final LoggingAdapter log = Logging.getLogger(context().system(), self());
 
+    private final ActorRef xmpp;
     private final ActorRef connection;
     private final JID resourceJID;
     private final Deque<Stanza> deliveryQueue = new ArrayDeque<>();
@@ -215,13 +216,14 @@ public class UserAgent extends AbstractPersistentActor {
 
     private final Set<String> delivered = new HashSet<>();
 
-    private Courier(JID resourceJID, ActorRef connection) {
+    private Courier(JID resourceJID, ActorRef connection, ActorRef xmpp) {
       this.connection = connection;
       this.resourceJID = resourceJID;
+      this.xmpp = xmpp;
     }
 
-    public static Props props(JID resourceJID, ActorRef connection) {
-      return Props.create(Courier.class, resourceJID, connection);
+    public static Props props(JID resourceJID, ActorRef connection, ActorRef xmpp) {
+      return Props.create(Courier.class, resourceJID, connection, xmpp);
     }
 
     @Override
@@ -242,6 +244,7 @@ public class UserAgent extends AbstractPersistentActor {
           }
 
           nextChunk();
+          xmpp.tell(new Presence(resourceJID, true), self());
         })
         .build();
     }
@@ -280,13 +283,15 @@ public class UserAgent extends AbstractPersistentActor {
         .match(Stanza.class, s -> {
           deliveryQueue.add(s);
           nextChunk();
-          connection.forward(s, context());
         })
         .match(Delivered.class, d -> {
           final String id = d.id();
           if (confirmationAwaitingStanzas.remove(id)) {
+
+            // TODO: handle delivered in XMPP actor
             final Stanza remove = inFlight.remove(id);
             //XMPP.whisper(remove.from(), delivered, context());
+
             nextChunk();
             context().parent().forward(d, context());
           } else {
