@@ -12,8 +12,8 @@ There is exactly one `UserAgent.Courier` per connected resource (JID resource, d
 Courier's key role is to reliably deliver messages to connection.
 
 `XMPP` is a key dispatcher. All not yet dispatched messages should be sent through `XMPP` actor. 
-If destination actor is already known one could sent it directly, e.g., `Delivered` messages from connection are sent directly. 
 It routes messages to services such as Roster, messages to users, etc.
+If destination actor is already known one could sent it directly, e.g., `Delivered` messages from connection are sent directly to `Courier`. 
 
 #### Caveats
 
