@@ -90,12 +90,12 @@ public class UserAgent extends AbstractPersistentActor {
         self().forward(status, context());
       } else {
         connected.add(resource);
-        courier = context().actorOf(Courier.props(bareJid.resource(status.resource), sender(), xmpp), actorResourceAddr);
-        sender().tell(courier, self());
-      }
-
-      if (connected.size() == 1) {
+        courier = context().actorOf(
+          Courier.props(bareJid.resource(status.resource), sender(), xmpp),
+          actorResourceAddr
+        );
         requestPresences();
+        sender().tell(courier, self());
       }
     } else {
       optional.ifPresent(actorRef -> context().stop(actorRef));
@@ -117,13 +117,10 @@ public class UserAgent extends AbstractPersistentActor {
       couriers().forEach(ref -> ref.tell(presence, sender()));
     } else if (presence.type() == Presence.PresenceType.PROBE) {
       connected.forEach(resource -> {
-        sender().tell(
-          new Presence(bareJid.resource(resource), presence.from(), Presence.PresenceType.AVAILABLE),
-          self()
-        );
+        sender().tell(new Presence(bareJid.resource(resource), presence.from(), true), self());
       });
     } else {
-      couriers().forEach(ref -> ref.tell(presence, sender()));
+      couriers().forEach(ref -> ref.tell(presence.to(bareJid), sender()));
     }
 
     if (!online() && presence.type() == Presence.PresenceType.SUBSCRIBE) {
@@ -171,10 +168,9 @@ public class UserAgent extends AbstractPersistentActor {
         log.info("Stanza {}  was not delivered: no courier found", stanza.xmlString());
       }
 
-
       // Unlike standard, we broadcast messages with no destination
       for (ActorRef courier : couriers) {
-        courier.forward(stanza, context());
+        courier.forward(stanza.to(bareJid), context());
       }
     }
   }
@@ -278,7 +274,7 @@ public class UserAgent extends AbstractPersistentActor {
     public Receive createReceive() {
       return ReceiveBuilder.create()
         .match(Presence.class, p -> {
-          connection.forward(p.to(resourceJID), context());
+          connection.forward(p, context());
         })
         .match(Stanza.class, s -> {
           deliveryQueue.add(s);
