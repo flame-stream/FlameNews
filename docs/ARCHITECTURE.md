@@ -17,7 +17,7 @@ It routes messages to services such as Roster, messages to users, etc.
 
 #### Caveats
 
-If CPU utilization suddenly becomes 100%, almost surely there is some insidious message is running in cycles. 
+If CPU utilization suddenly becomes 100%, almost surely there is some insidious message that is running in cycles. 
 Take thread dump several times to find hot method, then put breakpoint there. 
 Trace this message with breakpoints, this should help.
 
