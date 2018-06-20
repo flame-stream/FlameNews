@@ -46,6 +46,9 @@ public class ConnectedPhase extends XMPPPhase {
   @Nullable
   private ActorRef userAgent;
 
+  @Nullable
+  private ActorRef courier;
+
   public ConnectedPhase(ActorRef connection, String authId, ActorRef xmpp) {
     super(connection);
     this.xmpp = xmpp;
@@ -70,6 +73,9 @@ public class ConnectedPhase extends XMPPPhase {
       ReceiveBuilder.create()
         .match(Stanza.class, this::onStanza)
         .match(Close.class, this::onClose)
+        .match(ActorRef.class, courier -> {
+          this.courier = courier;
+        })
         .build()
     );
   }
@@ -164,7 +170,11 @@ public class ConnectedPhase extends XMPPPhase {
   private void tryProcessMessageReceipt(Message message) {
     if (message.has(Received.class)) {
       final String messageId = message.get(Received.class).id();
-      userAgent.tell(new Delivered(messageId, jid.bare(), jid.resource()), self());
+      if (courier != null) {
+        courier.tell(new Delivered(messageId, jid.bare(), jid.resource()), self());
+      } else {
+        log.warning("Can't process delivery ack to {}, courier is absent", jid);
+      }
     } else if (message.has(Request.class)) {
       final Message ack = new Message(message.from(), new Received(message.id()));
       answer(ack);

@@ -30,6 +30,11 @@ public interface Roster {
   class InMemRoster implements Roster {
     private final Map<String, Map<JID, RosterItem>> roster = new HashMap<>();
 
+    public InMemRoster() {
+      create("marnikitta", new RosterItem(new JID("tomat", "marnikitta.com", null), RosterItem.Subscription.BOTH));
+      create("tomat", new RosterItem(new JID("marnikitta", "marnikitta.com", null), RosterItem.Subscription.BOTH));
+    }
+
     @Override
     public Stream<RosterItem> items(String local) {
       return roster.getOrDefault(local, Collections.emptyMap()).values().stream();

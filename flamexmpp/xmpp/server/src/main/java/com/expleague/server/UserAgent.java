@@ -140,7 +140,8 @@ public class UserAgent extends AbstractPersistentActor {
   }
 
   private void onDelivered(Delivered delivered) {
-    if (delivered.resource() != null) {
+    // Why do we need to store _delivered_ in this actor
+    if (delivered.resource() != null) { // delivered to the concrete device
       persist(delivered, d -> {});
     }
   }
@@ -174,7 +175,6 @@ public class UserAgent extends AbstractPersistentActor {
       // Unlike standard, we broadcast messages with no destination
       for (ActorRef courier : couriers) {
         courier.forward(stanza, context());
-        courier.tell(stanza, self());
       }
     }
   }
@@ -278,7 +278,7 @@ public class UserAgent extends AbstractPersistentActor {
     public Receive createReceive() {
       return ReceiveBuilder.create()
         .match(Presence.class, p -> {
-          connection.forward(p, context());
+          connection.forward(p.to(resourceJID), context());
         })
         .match(Stanza.class, s -> {
           deliveryQueue.add(s);
@@ -288,12 +288,15 @@ public class UserAgent extends AbstractPersistentActor {
           final String id = d.id();
           if (confirmationAwaitingStanzas.remove(id)) {
 
-            // TODO: handle delivered in XMPP actor
-            final Stanza remove = inFlight.remove(id);
-            //XMPP.whisper(remove.from(), delivered, context());
+            // What is this code supposed to do?
+            // Something related to notifications?
+
+            // final Stanza remove = inFlight.remove(id);
+            // XMPP.whisper(remove.from(), delivered, context());
 
             nextChunk();
             context().parent().forward(d, context());
+            // NotificationsManager.delivered(id, connectedDevice, context());
           } else {
             log.warning("Unexpected delivery message id " + d.id());
           }
