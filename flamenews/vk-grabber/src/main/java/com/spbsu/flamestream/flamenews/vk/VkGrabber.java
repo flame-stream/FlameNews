@@ -33,76 +33,81 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class VkGrabber {
-    public static void main(String[] args) throws ClientException, ApiException, StreamingApiException, StreamingClientException, ExecutionException, InterruptedException {
-        if (args.length != 4) {
-            throw new IllegalArgumentException("Parameters number is invalid. Please set {VK app id} {VK access token} {Jabber JID} {Jabber password}");
-        }
-
-        final int appId = Integer.parseInt(args[0]);
-        final String accessToken = args[1];
-        final String jid = args[2];
-        final String password = args[3];
-
-        final TransportClient transportClient = new HttpTransportClient();
-        final VkApiClient vkClient = new VkApiClient(transportClient);
-        final VkStreamingApiClient streamingClient = new VkStreamingApiClient(transportClient);
-
-        final ServiceActor actor = new ServiceActor(appId, accessToken);
-        final GetServerUrlResponse getServerUrlResponse = vkClient.streaming().getServerUrl(actor).execute();
-        final StreamingActor streamingActor = new StreamingActor(
-                getServerUrlResponse.getEndpoint(),
-                getServerUrlResponse.getKey()
-        );
-
-        final String[] keyWords = new String[]{"и", "в", "не", "на", "я", "быть", "с", "он", "что", "а"};
-        final StreamingGetRulesResponse allRules = streamingClient.rules().get(streamingActor).execute();
-        final List<StreamingRule> rules = allRules.getRules() != null ? allRules.getRules() : new ArrayList<>();
-        final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
-        if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
-            rules.forEach(
-                    Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
-            );
-            Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
-                    .forEach(Unchecked.consumer(
-                            tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
-                    );
-        }
-
-        final int dogIndex = jid.indexOf('@');
-        final JabberClient client = new JabberClient(jid.substring(0, dogIndex), jid.substring(dogIndex + 1, jid.length()), password);
-        client.online();
-
-        final Logger logger = Logger.getLogger(VkGrabber.class.getName());
-        final RpsMeasurer rpsMeasurer = new RpsMeasurer();
-        while (!Thread.currentThread().isInterrupted()) {
-            final CountDownLatch latch = new CountDownLatch(1);
-            streamingClient.stream().get(streamingActor, new StreamingEventHandler() {
-                @Override
-                public void handle(StreamingCallbackMessage message) {
-                    logger.info("RECEIVED: " + message);
-                    client.send(message.getEvent().getText());
-
-                    rpsMeasurer.logRequest();
-                    logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
-                }
-            }).execute().addWebSocketListener(new WebSocketListener() {
-                @Override
-                public void onOpen(WebSocket webSocket) {
-                }
-
-                @Override
-                public void onClose(WebSocket webSocket) {
-                    latch.countDown();
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    latch.countDown();
-                }
-            });
-            latch.await();
-        }
-
-        client.offline();
+  public static void main(String[] args) throws Exception {
+    if (args.length != 4) {
+      throw new IllegalArgumentException(
+        "Parameters number is invalid. Please set {VK app id} {VK access token} {Jabber JID} {Jabber password}");
     }
+
+    final int appId = Integer.parseInt(args[0]);
+    final String accessToken = args[1];
+    final String jid = args[2];
+    final String password = args[3];
+
+    final TransportClient transportClient = new HttpTransportClient();
+    final VkApiClient vkClient = new VkApiClient(transportClient);
+    final VkStreamingApiClient streamingClient = new VkStreamingApiClient(transportClient);
+
+    final ServiceActor actor = new ServiceActor(appId, accessToken);
+    final GetServerUrlResponse getServerUrlResponse = vkClient.streaming().getServerUrl(actor).execute();
+    final StreamingActor streamingActor = new StreamingActor(
+      getServerUrlResponse.getEndpoint(),
+      getServerUrlResponse.getKey()
+    );
+
+    final String[] keyWords = new String[]{"и", "в", "не", "на", "я", "быть", "с", "он", "что", "а"};
+    final StreamingGetRulesResponse allRules = streamingClient.rules().get(streamingActor).execute();
+    final List<StreamingRule> rules = allRules.getRules() != null ? allRules.getRules() : new ArrayList<>();
+    final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
+    if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
+      rules.forEach(
+        Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
+      );
+      Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
+        .forEach(Unchecked.consumer(
+          tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
+        );
+    }
+
+    final int dogIndex = jid.indexOf('@');
+    final JabberClient client = new JabberClient(
+      jid.substring(0, dogIndex),
+      jid.substring(dogIndex + 1, jid.length()),
+      password
+    );
+    client.online();
+
+    final Logger logger = Logger.getLogger(VkGrabber.class.getName());
+    final RpsMeasurer rpsMeasurer = new RpsMeasurer();
+    while (!Thread.currentThread().isInterrupted()) {
+      final CountDownLatch latch = new CountDownLatch(1);
+      streamingClient.stream().get(streamingActor, new StreamingEventHandler() {
+        @Override
+        public void handle(StreamingCallbackMessage message) {
+          logger.info("RECEIVED: " + message);
+          client.send(message.getEvent().getText());
+
+          rpsMeasurer.logRequest();
+          logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
+        }
+      }).execute().addWebSocketListener(new WebSocketListener() {
+        @Override
+        public void onOpen(WebSocket webSocket) {
+        }
+
+        @Override
+        public void onClose(WebSocket webSocket) {
+          latch.countDown();
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+          latch.countDown();
+        }
+      });
+      latch.await();
+    }
+
+    client.offline();
+  }
 }
