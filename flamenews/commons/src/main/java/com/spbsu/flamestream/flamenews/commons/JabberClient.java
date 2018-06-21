@@ -1,6 +1,9 @@
 package com.spbsu.flamestream.flamenews.commons;
 
 import com.expleague.commons.util.sync.StateLatch;
+import org.jooq.lambda.Unchecked;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tigase.jaxmpp.core.client.AsyncCallback;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
@@ -27,13 +30,12 @@ import tigase.jaxmpp.j2se.connectors.socket.SocketConnector;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.logging.Logger;
 
 public class JabberClient {
   private static final String RESOURCE = "grabber";
   private static final int RETRY_LOGIN_COUNT = 10;
   private static final long RETRY_LOGIN_SLEEP_MILLIS = 100L;
-  private static final Logger logger = Logger.getLogger(JabberClient.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(JabberClient.class);
 
   private final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
   private final StateLatch latch = new StateLatch();
@@ -147,9 +149,9 @@ public class JabberClient {
   }
 
   public void online() {
-      if (jaxmpp.isConnected()) {
-          return;
-      }
+    if (jaxmpp.isConnected()) {
+      return;
+    }
     if (!registered) {
       start();
     } else {
@@ -235,7 +237,7 @@ public class JabberClient {
 
     @Override
     public Criteria getCriteria() {
-      return new ElementCriteria("message", new String[0], new String[0]);
+      return new ElementCriteria(null, new String[0], new String[0]);
     }
 
     @Override
@@ -251,10 +253,17 @@ public class JabberClient {
           stanza.setType(StanzaType.subscribed);
           stanza.setTo(presence.getFrom());
           jaxmpp.send(stanza);
+          logger.info("New subscription received from {}", presence.getFrom());
+        } else if (presence.getType() == StanzaType.unsubscribe) {
+          // do nothing
         } else if (presence.getType() == StanzaType.unavailable) {
-          liveSubscribers.remove(presence.getFrom());
-        } else {
+          liveSubscribers.removeIf(
+            Unchecked.predicate(jid -> jid.getLocalpart().equals(presence.getFrom().getLocalpart()))
+          );
+          logger.info("Subscriber became unavailable: {}", presence.getFrom());
+        } else if (presence.getType() == null) {
           liveSubscribers.add(presence.getFrom());
+          logger.info("Subscriber became available: {}", presence.getFrom());
         }
       } catch (JaxmppException e) {
         throw new RuntimeException(e);

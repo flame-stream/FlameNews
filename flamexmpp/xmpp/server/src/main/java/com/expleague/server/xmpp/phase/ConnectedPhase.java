@@ -104,6 +104,9 @@ public class ConnectedPhase extends XMPPPhase {
       // to connection
       if (stanza instanceof Message) {
         answer(tryRequestMessageReceipt((Message) stanza));
+      } else if (stanza instanceof Presence) {
+        stanza.to(null);
+        answer(stanza);
       } else {
         answer(stanza);
       }
