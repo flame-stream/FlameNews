@@ -22,8 +22,10 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -54,14 +56,15 @@ public class VkGrabber {
 
         final String[] keyWords = new String[]{"и", "в", "не", "на", "я", "быть", "с", "он", "что", "а"};
         final StreamingGetRulesResponse allRules = streamingClient.rules().get(streamingActor).execute();
-        final Set<String> ruleWords = allRules.getRules().stream().map(StreamingRule::getValue).collect(Collectors.toSet());
+        final List<StreamingRule> rules = allRules.getRules() != null ? allRules.getRules() : new ArrayList<>();
+        final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
         if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
-            allRules.getRules().forEach(
+            rules.forEach(
                     Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
             );
             Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
                     .forEach(Unchecked.consumer(
-                            tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1))
+                            tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
                     );
         }
 
