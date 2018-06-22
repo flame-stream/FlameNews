@@ -18,6 +18,7 @@ import org.asynchttpclient.ws.WebSocketListener;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -80,7 +81,7 @@ public class VkGrabber {
         @Override
         public void handle(StreamingCallbackMessage message) {
           logger.info("RECEIVED: " + message);
-          client.send(message.getEvent().getText());
+          client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), message.getEvent().getText());
 
           rpsMeasurer.logRequest();
           logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());

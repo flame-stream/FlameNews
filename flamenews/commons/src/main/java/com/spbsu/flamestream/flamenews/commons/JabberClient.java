@@ -1,7 +1,6 @@
 package com.spbsu.flamestream.flamenews.commons;
 
 import com.expleague.commons.util.sync.StateLatch;
-import org.jooq.lambda.Unchecked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tigase.jaxmpp.core.client.AsyncCallback;
@@ -22,14 +21,14 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
-import tigase.jaxmpp.core.client.xmpp.stanzas.StanzaType;
 import tigase.jaxmpp.j2se.J2SEPresenceStore;
 import tigase.jaxmpp.j2se.J2SESessionObject;
 import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.jaxmpp.j2se.connectors.socket.SocketConnector;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.time.Instant;
+import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class JabberClient {
   private static final String RESOURCE = "grabber";
@@ -39,14 +38,20 @@ public class JabberClient {
 
   private final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
   private final StateLatch latch = new StateLatch();
-  private final Set<JID> liveSubscribers = new ConcurrentSkipListSet<>();
 
   private final String password;
   private final JID jid;
+  private final int storeLimit;
 
   private boolean registered = false;
 
+  private final NavigableMap<Instant, String> messages = new ConcurrentSkipListMap<>();
+
   public JabberClient(String id, String domain, String password) {
+    this(id, domain, password, 1000);
+  }
+
+  public JabberClient(String id, String domain, String password, int storeLimit) {
     this.password = password;
     this.jid = JID.jidInstance(id, domain, RESOURCE);
 
@@ -55,8 +60,9 @@ public class JabberClient {
 
     PresenceModule.setPresenceStore(jaxmpp.getSessionObject(), new J2SEPresenceStore());
     jaxmpp.getModulesManager().register(new MucModule());
-    jaxmpp.getModulesManager().register(new PresenceHandler(jaxmpp, liveSubscribers));
+    jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
     jaxmpp.getModulesManager().register(new RosterModule());
+    this.storeLimit = storeLimit;
   }
 
   private void start() {
@@ -121,7 +127,7 @@ public class JabberClient {
 
       jaxmpp.getEventBus()
         .addHandler(JaxmppCore.ConnectedHandler.ConnectedEvent.class, sessionObject -> latch.advance());
-      jaxmpp.getModulesManager().register(new PresenceHandler(jaxmpp, liveSubscribers));
+      jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
 
       jaxmpp.getEventBus()
         .addHandler(
@@ -182,19 +188,13 @@ public class JabberClient {
     }
   }
 
-  public void send(String text) {
+  public void send(Instant eventTime, String text) {
     online();
-    liveSubscribers.forEach(subscriber -> {
-      try {
-        final Message message = Message.createMessage();
-        message.setFrom(jid);
-        message.setTo(subscriber);
-        message.setBody(text);
-        jaxmpp.send(message);
-      } catch (JaxmppException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    messages.put(eventTime, text);
+
+    if (messages.size() > storeLimit) {
+      messages.remove(messages.firstKey());
+    }
   }
 
   private static class PrinterAsyncCallback implements AsyncCallback {
@@ -226,18 +226,18 @@ public class JabberClient {
     }
   }
 
-  private static class PresenceHandler extends AbstractStanzaModule<Presence> {
+  private static class PullHandler extends AbstractStanzaModule<Message> {
     private final Jaxmpp jaxmpp;
-    private final Set<JID> liveSubscribers;
+    private final NavigableMap<Instant, String> messages;
 
-    private PresenceHandler(Jaxmpp jaxmpp, Set<JID> liveSubscribers) {
+    private PullHandler(Jaxmpp jaxmpp, NavigableMap<Instant, String> messages) {
       this.jaxmpp = jaxmpp;
-      this.liveSubscribers = liveSubscribers;
+      this.messages = messages;
     }
 
     @Override
     public Criteria getCriteria() {
-      return new ElementCriteria(null, new String[0], new String[0]);
+      return new ElementCriteria("message", new String[0], new String[0]);
     }
 
     @Override
@@ -246,26 +246,24 @@ public class JabberClient {
     }
 
     @Override
-    public void process(Presence presence) {
+    public void process(Message message) {
       try {
-        if (presence.getType() == StanzaType.subscribe) {
-          final Presence stanza = Presence.create();
-          stanza.setType(StanzaType.subscribed);
-          stanza.setTo(presence.getFrom());
-          jaxmpp.send(stanza);
-          logger.info("New subscription received from {}", presence.getFrom());
-        } else if (presence.getType() == StanzaType.unsubscribe) {
-          // do nothing
-        } else if (presence.getType() == StanzaType.unavailable) {
-          liveSubscribers.removeIf(
-            Unchecked.predicate(jid -> jid.getLocalpart().equals(presence.getFrom().getLocalpart()))
-          );
-          logger.info("Subscriber became unavailable: {}", presence.getFrom());
-        } else if (presence.getType() == null) {
-          liveSubscribers.add(presence.getFrom());
-          logger.info("Subscriber became available: {}", presence.getFrom());
+        final String body = message.getBody();
+        if (body != null) {
+          final Instant requestFrom = Instant.ofEpochSecond(Long.parseLong(body));
+          for (String s : messages.tailMap(requestFrom).values()) {
+            final Message outMessage = Message.create();
+            outMessage.setBody(s);
+            outMessage.setTo(message.getFrom());
+            jaxmpp.send(outMessage);
+          }
+
+          final Message last = Message.create();
+          last.setBody("Last timestamp = " + messages.lastKey().getEpochSecond());
+          last.setTo(message.getFrom());
+          jaxmpp.send(last);
         }
-      } catch (JaxmppException e) {
+      } catch (JaxmppException | NumberFormatException e) {
         throw new RuntimeException(e);
       }
     }
