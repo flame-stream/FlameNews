@@ -1,5 +1,6 @@
 package com.expleague.server;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -35,15 +36,26 @@ public class UserAgent extends AbstractPersistentActor {
   private final JID bareJid;
   private final ActorRef xmpp;
 
+  private final boolean reliable;
+
   private final Set<String> connected = new HashSet<>();
 
   public UserAgent(JID bareJid, ActorRef xmpp) {
+    this(bareJid, xmpp, false);
+  }
+
+  public UserAgent(JID bareJid, ActorRef xmpp, boolean reliable) {
     this.bareJid = bareJid;
     this.xmpp = xmpp;
+    this.reliable = reliable;
   }
 
   public static Props props(JID bare, ActorRef xmpp) {
-    return Props.create(UserAgent.class, bare, xmpp);
+    return props(bare, xmpp, false);
+  }
+
+  public static Props props(JID bare, ActorRef xmpp, boolean reliable) {
+    return Props.create(UserAgent.class, bare, xmpp, reliable);
   }
 
   @Override
@@ -57,7 +69,13 @@ public class UserAgent extends AbstractPersistentActor {
       .match(ConnStatus.class, this::onStatus)
       .match(Presence.class, this::onPresence)
       .match(Iq.class, iq -> iq.get() instanceof RosterQuery && iq.type() == Iq.IqType.SET, this::onRosterPush)
-      .match(Stanza.class, s -> persist(s, this::toConn))
+      .match(Stanza.class, s -> {
+        if (!reliable) {
+          toConn(s);
+        } else {
+          persist(s, this::toConn);
+        }
+      })
       .match(Delivered.class, this::onDelivered)
       .build();
   }
@@ -90,10 +108,17 @@ public class UserAgent extends AbstractPersistentActor {
         self().forward(status, context());
       } else {
         connected.add(resource);
-        courier = context().actorOf(
-          Courier.props(bareJid.resource(status.resource), sender(), xmpp),
-          actorResourceAddr
-        );
+        if (reliable) {
+          courier = context().actorOf(
+            ReliableCourier.props(bareJid.resource(status.resource), sender(), xmpp),
+            actorResourceAddr
+          );
+        } else {
+          courier = context().actorOf(
+            Courier.props(bareJid.resource(status.resource), sender(), xmpp),
+            actorResourceAddr
+          );
+        }
         requestPresences();
         sender().tell(courier, self());
       }
@@ -168,10 +193,8 @@ public class UserAgent extends AbstractPersistentActor {
         log.info("Stanza {}  was not delivered: no courier found", stanza.xmlString());
       }
 
-      // Unlike standard, we broadcast messages with no destination
-      for (ActorRef courier : couriers) {
-        courier.forward(stanza.to(bareJid), context());
-      }
+      // Unlike standard, we send messages with no destination to random courier
+      couriers.get(0).forward(stanza.to(bareJid), context());
     }
   }
 
@@ -197,7 +220,31 @@ public class UserAgent extends AbstractPersistentActor {
     return result;
   }
 
-  private static final class Courier extends AbstractPersistentActor {
+  private static final class Courier extends AbstractActor {
+    private final ActorRef connection;
+    private final JID resourceJID;
+    private final ActorRef xmpp;
+
+    private Courier(JID resourceJID, ActorRef connection, ActorRef xmpp) {
+      this.connection = connection;
+      this.resourceJID = resourceJID;
+      this.xmpp = xmpp;
+    }
+
+    public static Props props(JID resourceJID, ActorRef connection, ActorRef xmpp) {
+      return Props.create(Courier.class, resourceJID, connection, xmpp);
+    }
+
+    @Override
+    public Receive createReceive() {
+      return ReceiveBuilder.create()
+        .match(Delivered.class, d -> {})
+        .matchAny(a -> connection.forward(a, context()))
+        .build();
+    }
+  }
+
+  private static final class ReliableCourier extends AbstractPersistentActor {
     private final LoggingAdapter log = Logging.getLogger(context().system(), self());
 
     private final ActorRef xmpp;
@@ -212,14 +259,14 @@ public class UserAgent extends AbstractPersistentActor {
 
     private final Set<String> delivered = new HashSet<>();
 
-    private Courier(JID resourceJID, ActorRef connection, ActorRef xmpp) {
+    private ReliableCourier(JID resourceJID, ActorRef connection, ActorRef xmpp) {
       this.connection = connection;
       this.resourceJID = resourceJID;
       this.xmpp = xmpp;
     }
 
     public static Props props(JID resourceJID, ActorRef connection, ActorRef xmpp) {
-      return Props.create(Courier.class, resourceJID, connection, xmpp);
+      return Props.create(ReliableCourier.class, resourceJID, connection, xmpp);
     }
 
     @Override
