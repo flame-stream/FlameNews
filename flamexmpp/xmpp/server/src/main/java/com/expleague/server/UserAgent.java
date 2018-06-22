@@ -356,7 +356,7 @@ public class UserAgent extends AbstractPersistentActor {
 
     @Override
     public String persistenceId() {
-      return resourceJID.toString();
+      return resourceJID.bare().getAddr();
     }
   }
 }
