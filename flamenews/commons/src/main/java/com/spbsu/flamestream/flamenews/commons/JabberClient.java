@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class JabberClient {
   private static final String RESOURCE = "grabber";
   private static final int RETRY_LOGIN_COUNT = 10;
-  private static final long RETRY_LOGIN_SLEEP_MILLIS = 100L;
+  private static final long RETRY_LOGIN_SLEEP_MILLIS = 1000L;
   private static final Logger logger = LoggerFactory.getLogger(JabberClient.class);
 
   private final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
