@@ -13,6 +13,7 @@ import com.expleague.xmpp.model.Features;
 import com.expleague.xmpp.model.JID;
 import com.expleague.xmpp.model.control.Bind;
 import com.expleague.xmpp.model.control.Close;
+import com.expleague.xmpp.model.control.Session;
 import com.expleague.xmpp.model.control.receipts.Delivered;
 import com.expleague.xmpp.model.control.receipts.Received;
 import com.expleague.xmpp.model.control.receipts.Request;
@@ -82,7 +83,7 @@ public class ConnectedPhase extends XMPPPhase {
 
   @Override
   public void open() {
-    answer(new Features(new Bind()));
+    answer(new Features(new Bind(), new Session()));
   }
 
   /**
@@ -95,8 +96,8 @@ public class ConnectedPhase extends XMPPPhase {
    * This is done so we can differentiate incoming and outgoing stanzas
    */
   private void onStanza(Stanza stanza) throws ExecutionException, InterruptedException {
-    if (!bound && !tryBind(stanza)) {
-      log.warning("There shouldn't be any messages before bind. Got {}", stanza);
+    if (!bound) {
+      tryBind(stanza);
       return;
     }
 
@@ -114,7 +115,8 @@ public class ConnectedPhase extends XMPPPhase {
       // from connection
       if (stanza instanceof Message) {
         final Message message = (Message) stanza;
-        final Message.Timestamp ts = new Message.Timestamp(synced ? message.ts() + clientTsDiff : System.currentTimeMillis());
+        final Message.Timestamp ts = new Message.Timestamp(synced ?
+          message.ts() + clientTsDiff : System.currentTimeMillis());
         message.append(ts);
         tryProcessMessageReceipt(message);
       }
@@ -125,41 +127,45 @@ public class ConnectedPhase extends XMPPPhase {
     }
   }
 
-  private boolean tryBind(Stanza stanza) throws ExecutionException, InterruptedException {
-    if (stanza instanceof Iq) {
-      final Iq<?> iq = ((Iq<?>) stanza);
-      if (iq.type() == Iq.IqType.SET && iq.get() instanceof Bind) {
-        if (iq.hasTs()) { //ts diff between client and server
-          clientTsDiff = System.currentTimeMillis() - iq.ts();
-          synced = true;
-        }
-        else synced = false;
-        final Bind payload = (Bind) iq.get();
-        final String resource;
-        {
-          final String providedResource = payload.resource();
-          if (providedResource != null && !providedResource.isEmpty()) {
-            resource = providedResource;
-          } else {
-            resource = UUID.randomUUID().toString();
-          }
-        }
-        jid = jid.resource(resource);
-        answer(Iq.answer(iq, new Bind(jid)));
+  private void tryBind(Stanza stanza) throws ExecutionException, InterruptedException {
+    if (!(stanza instanceof Iq)) {
+      return;
+    }
+    final Iq<?> iq = (Iq<?>) stanza;
 
-        bound = true;
-        userAgent = (ActorRef) PatternsCS.ask(
-          xmpp,
-          jid,
-          Timeout.apply(Duration.create(60, TimeUnit.SECONDS))
-        ).toCompletableFuture().get();
-        userAgent.tell(new UserAgent.ConnStatus(true, jid.resource()), self());
-        return true;
+    if (iq.type() == Iq.IqType.SET && iq.get() instanceof Bind) {
+      if (iq.hasTs()) { //ts diff between client and server
+        clientTsDiff = System.currentTimeMillis() - iq.ts();
+        synced = true;
       } else {
-        return false;
+        synced = false;
       }
-    } else {
-      return false;
+      final Bind payload = (Bind) iq.get();
+      final String resource;
+      {
+        final String providedResource = payload.resource();
+        if (providedResource != null && !providedResource.isEmpty()) {
+          resource = providedResource;
+        } else {
+          resource = UUID.randomUUID().toString();
+        }
+      }
+      jid = jid.resource(resource);
+      answer(Iq.answer(iq, new Bind(jid)));
+      return;
+    }
+
+    if (iq.type() == Iq.IqType.SET && iq.get() instanceof Session) {
+      bound = true;
+      answer(Iq.answer(iq, new Session()));
+
+      userAgent = (ActorRef) PatternsCS.ask(
+        xmpp,
+        jid,
+        Timeout.apply(Duration.create(60, TimeUnit.SECONDS))
+      ).toCompletableFuture().get();
+      userAgent.tell(new UserAgent.ConnStatus(true, jid.resource()), self());
+      log.info("Session to {} is now established", jid);
     }
   }
 
