@@ -25,7 +25,7 @@ In current architecture you should always label outgoing stanzas with `to` attri
 
 #### How to run
 
-1. In `application.yml` change domain to proper domain (`$ hostname` will help to know your local domain)
+1. In `application.conf` change domain to proper domain (`$ hostname` will help to know your local domain)
 2. Change `put_any_hostname_here.p12` filename to proper domain name
 3. Run `XMPPServerApplication`, it should be fine
 

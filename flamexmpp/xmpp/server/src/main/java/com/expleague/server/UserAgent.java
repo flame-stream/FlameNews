@@ -191,6 +191,7 @@ public class UserAgent extends AbstractPersistentActor {
       final List<ActorRef> couriers = couriers();
       if (couriers.isEmpty()) {
         log.info("Stanza {}  was not delivered: no courier found", stanza.xmlString());
+        return;
       }
 
       // Unlike standard, we send messages with no destination to random courier
