@@ -10,6 +10,6 @@ ARG JAR_FILE
 
 ADD target/lib /xmpp/lib
 ADD target/${JAR_FILE} /xmpp/app.jar
-ADD target/classes/marnikitta.com.p12 /certs/
+ADD target/classes/localhost.p12 /certs/
 
 ENTRYPOINT ["/usr/bin/java", "-DunitTestEnabled=false", "-jar", "/xmpp/app.jar"]
