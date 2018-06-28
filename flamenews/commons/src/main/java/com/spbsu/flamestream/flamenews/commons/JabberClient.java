@@ -127,7 +127,6 @@ public class JabberClient {
 
       jaxmpp.getEventBus()
         .addHandler(JaxmppCore.ConnectedHandler.ConnectedEvent.class, sessionObject -> latch.advance());
-      jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
 
       jaxmpp.getEventBus()
         .addHandler(
