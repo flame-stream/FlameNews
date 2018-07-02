@@ -39,10 +39,10 @@ public class VkGrabber {
     final String accessToken = args[1];
     final String jid = args[2];
     final String password = args[3];
+    final Logger logger = Logger.getLogger(VkGrabber.class.getName());
 
     final TransportClient transportClient = new HttpTransportClient();
     final VkApiClient vkClient = new VkApiClient(transportClient);
-    final VkStreamingApiClient streamingClient = new VkStreamingApiClient(transportClient);
 
     final ServiceActor actor = new ServiceActor(appId, accessToken);
     final GetServerUrlResponse getServerUrlResponse = vkClient.streaming().getServerUrl(actor).execute();
@@ -51,59 +51,64 @@ public class VkGrabber {
       getServerUrlResponse.getKey()
     );
 
-    final String[] keyWords = new String[]{"и", "в", "не", "на", "я", "быть", "с", "он", "что", "а"};
-    final StreamingGetRulesResponse allRules = streamingClient.rules().get(streamingActor).execute();
-    final List<StreamingRule> rules = allRules.getRules() != null ? allRules.getRules() : new ArrayList<>();
-    final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
-    if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
-      rules.forEach(
-        Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
-      );
-      Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
-        .forEach(Unchecked.consumer(
-          tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
+    final VkStreamingApiClient streamingClient = new VkStreamingApiClient(transportClient);
+    try {
+      final String[] keyWords = new String[]{"и", "в", "не", "на", "я", "быть", "с", "он", "что", "а"};
+      final StreamingGetRulesResponse allRules = streamingClient.rules().get(streamingActor).execute();
+      final List<StreamingRule> rules = allRules.getRules() != null ? allRules.getRules() : new ArrayList<>();
+      final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
+      if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
+        rules.forEach(
+          Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
         );
+        Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
+          .forEach(Unchecked.consumer(
+            tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
+          );
+      }
+
+      final int dogIndex = jid.indexOf('@');
+      final JabberClient client = new JabberClient(
+        jid.substring(0, dogIndex),
+        jid.substring(dogIndex + 1, jid.length()),
+        password
+      );
+      client.online();
+
+      final RpsMeasurer rpsMeasurer = new RpsMeasurer();
+      while (!Thread.currentThread().isInterrupted()) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        streamingClient.stream().get(streamingActor, new StreamingEventHandler() {
+          @Override
+          public void handle(StreamingCallbackMessage message) {
+            logger.info("RECEIVED: " + message);
+            client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), message.getEvent().getText());
+
+            rpsMeasurer.logRequest();
+            logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
+          }
+        }).execute().addWebSocketListener(new WebSocketListener() {
+          @Override
+          public void onOpen(WebSocket webSocket) {
+          }
+
+          @Override
+          public void onClose(WebSocket webSocket) {
+            latch.countDown();
+          }
+
+          @Override
+          public void onError(Throwable throwable) {
+            latch.countDown();
+          }
+        });
+        latch.await();
+      }
+
+      client.offline();
+    } catch (Exception e) {
+      logger.warning(e.toString());
+      streamingClient.getAsyncHttpClient().close();
     }
-
-    final int dogIndex = jid.indexOf('@');
-    final JabberClient client = new JabberClient(
-      jid.substring(0, dogIndex),
-      jid.substring(dogIndex + 1, jid.length()),
-      password
-    );
-    client.online();
-
-    final Logger logger = Logger.getLogger(VkGrabber.class.getName());
-    final RpsMeasurer rpsMeasurer = new RpsMeasurer();
-    while (!Thread.currentThread().isInterrupted()) {
-      final CountDownLatch latch = new CountDownLatch(1);
-      streamingClient.stream().get(streamingActor, new StreamingEventHandler() {
-        @Override
-        public void handle(StreamingCallbackMessage message) {
-          logger.info("RECEIVED: " + message);
-          client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), message.getEvent().getText());
-
-          rpsMeasurer.logRequest();
-          logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
-        }
-      }).execute().addWebSocketListener(new WebSocketListener() {
-        @Override
-        public void onOpen(WebSocket webSocket) {
-        }
-
-        @Override
-        public void onClose(WebSocket webSocket) {
-          latch.countDown();
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-          latch.countDown();
-        }
-      });
-      latch.await();
-    }
-
-    client.offline();
   }
 }
