@@ -3,3 +3,4 @@
 *.iml
 target/
 journal
+vk-grabber-variables.env

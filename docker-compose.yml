@@ -1,0 +1,12 @@
+version: '3'
+services:
+  xmpp-server:
+    image: xmpp-server
+    ports:
+      - "5222:5222"
+  vk-grabber:
+    image: flamenews-vk-grabber
+    depends_on:
+      - "xmpp-server"
+    env_file:
+      - vk-grabber-variables.env
