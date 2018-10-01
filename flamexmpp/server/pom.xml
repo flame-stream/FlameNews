@@ -19,5 +19,6 @@
         <module>admin</module>
         <module>search</module>
         <module>akka-xmpp</module>
+        <module>xmpp-bots</module>
     </modules>
 </project>
