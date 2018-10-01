@@ -4,3 +4,13 @@
 target/
 journal
 vk-grabber-variables.env
+jackrabbit/repository
+jackrabbit/version
+jackrabbit/workspaces
+jackrabbit/.lock
+derby.log
+*.crt
+*.csr
+*.key
+*.key.org
+*.p12

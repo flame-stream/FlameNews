@@ -10,8 +10,8 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>parent</module>
         <module>flamexmpp</module>
         <module>flamenews</module>
-        <module>parent</module>
     </modules>
 </project>
