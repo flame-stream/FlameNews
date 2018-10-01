@@ -45,16 +45,16 @@ public class ExpLeagueServer {
 
     // singletons
     system.actorOf(ActorAdapter.props(XMPP.class), "xmpp");
-    system.actorOf(ActorAdapter.props(LaborExchange.class), "labor-exchange");
+    //system.actorOf(ActorAdapter.props(LaborExchange.class), "labor-exchange");
     XMPP.send(new Message(XMPP.jid(), RepositoryService.jid(), new Operations.Start()), system);
 
     // per node
     //system.actorOf(ActorAdapter.props(NotificationsManager.class, config.iosPushCert(), config.iosPushPasswd()), "notifications");
     system.actorOf(ActorAdapter.props(XMPPServices.class), "services");
     system.actorOf(ActorAdapter.props(XMPPServer.class), "comm");
-    system.actorOf(ActorAdapter.props(BOSHServer.class), "bosh");
-    system.actorOf(ActorAdapter.props(ImageStorage.class), "image-storage");
-    system.actorOf(ActorAdapter.props(ExpLeagueAdminService.class, load.getConfig("tbts.admin.embedded")), "admin-service");
+    //system.actorOf(ActorAdapter.props(BOSHServer.class), "bosh");
+    //system.actorOf(ActorAdapter.props(ImageStorage.class), "image-storage");
+    //system.actorOf(ActorAdapter.props(ExpLeagueAdminService.class, load.getConfig("tbts.admin.embedded")), "admin-service");
   }
 
   public static Roster roster() {
