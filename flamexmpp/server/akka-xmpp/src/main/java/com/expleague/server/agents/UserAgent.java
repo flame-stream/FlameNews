@@ -112,10 +112,12 @@ public class UserAgent extends PersistentActorAdapter {
     if (!sta.from().bareEq(jid())) { // incoming
       if (sta instanceof Message) {
         persist(sta, this::toConn);
+      } else {
+        toConn(sta);
       }
-      else toConn(sta);
+    } else if (!jid().bareEq(sta.to())) {
+      toWorld(sta);
     }
-    else toWorld(sta);
   }
 
   @ActorMethod
