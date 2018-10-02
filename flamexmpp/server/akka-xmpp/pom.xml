@@ -156,7 +156,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.expleague.server.XMPPServerApplication</mainClass>
+                            <mainClass>com.expleague.server.ExpLeagueServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
