@@ -29,7 +29,6 @@ export PASSPHRASE=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | head -c 128)
 # Certificate details; replace items in angle brackets with your own info
 subj="
 C=RU
-ST=
 O=Experts League
 localityName=<CITY>
 commonName=$DOMAIN
