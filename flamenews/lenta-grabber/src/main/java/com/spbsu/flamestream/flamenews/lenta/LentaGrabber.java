@@ -21,6 +21,58 @@ import java.util.List;
 
 public class LentaGrabber {
 
+    private static void addNewFile (String dirPath, News news) {
+        int curNameOfFile = 0;
+        File theDir = new File(dirPath);
+        if (!theDir.exists()) {
+            System.out.println("Creating directory: " + dirPath);
+            try{
+                theDir.mkdir();
+                System.out.println("Directory created");
+            }
+            catch(SecurityException e){
+                System.out.println(e.getMessage());
+            }
+        }
+
+        File[] files = theDir.listFiles();
+        for (File file : files) {
+            String name = file.getName();
+            int num;
+            try {
+                num = Integer.parseInt(name.substring(0, name.lastIndexOf(".")));
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            if (num > curNameOfFile) {
+                curNameOfFile = num;
+            }
+        }
+
+        curNameOfFile++;
+        String filePath = dirPath + String.valueOf(curNameOfFile) + ".xml";
+        try {
+            FileWriter writer = new FileWriter(filePath, false);
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            writer.append('\n');
+            writer.write("<item>");
+            writer.append('\n');
+            writer.write("<title>" + news.getTitle() + "</title>");
+            writer.append('\n');
+            writer.write("<text>" + news.getText() + "</text>");
+            writer.append('\n');
+            writer.write("<category>" + news.getCategory() + "</category>");
+            writer.append('\n');
+            writer.write("</item>");
+            writer.flush();
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static final String directory = "../news/";
+
     private static final String URL_LENTA = "https://lenta.ru/rss/news";
 
     public static void main(String[] args) throws IOException, JAXBException, InterruptedException {
@@ -65,11 +117,10 @@ public class LentaGrabber {
                 }
                 oldItem = newrss.getChannel().getItems().get(0);
             }
-            Thread.sleep(60 * 1000);
-
             for (News n : news) {
-                System.out.println(n.toString());
+                addNewFile(directory, n);
             }
+            Thread.sleep(60 * 1000);
         }
 
     }
