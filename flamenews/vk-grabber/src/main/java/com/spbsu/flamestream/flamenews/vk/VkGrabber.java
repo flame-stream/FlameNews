@@ -5,8 +5,11 @@ import com.spbsu.flamestream.flamenews.commons.utils.RpsMeasurer;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.ServiceActor;
+import com.vk.api.sdk.exceptions.ApiException;
+import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.streaming.responses.GetServerUrlResponse;
+import com.vk.api.sdk.objects.wall.WallPostFull;
 import com.vk.api.sdk.streaming.clients.StreamingEventHandler;
 import com.vk.api.sdk.streaming.clients.VkStreamingApiClient;
 import com.vk.api.sdk.streaming.clients.actors.StreamingActor;
@@ -29,6 +32,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class VkGrabber {
+  private static VkApiClient vkClient;
+  private static ServiceActor actor;
+
   public static void main(String[] args) throws Exception {
     if (args.length != 4) {
       throw new IllegalArgumentException(
@@ -42,9 +48,9 @@ public class VkGrabber {
     final Logger logger = Logger.getLogger(VkGrabber.class.getName());
 
     final TransportClient transportClient = new HttpTransportClient();
-    final VkApiClient vkClient = new VkApiClient(transportClient);
+    vkClient = new VkApiClient(transportClient);
 
-    final ServiceActor actor = new ServiceActor(appId, accessToken);
+    actor = new ServiceActor(appId, accessToken);
     final GetServerUrlResponse getServerUrlResponse = vkClient.streaming().getServerUrl(actor).execute();
     final StreamingActor streamingActor = new StreamingActor(
       getServerUrlResponse.getEndpoint(),
@@ -82,8 +88,8 @@ public class VkGrabber {
           @Override
           public void handle(StreamingCallbackMessage message) {
             logger.info("RECEIVED: " + message);
-            client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), message.getEvent().getText());
-
+            String textMessage = getXMLMessage(message, logger);
+            client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), textMessage);
             rpsMeasurer.logRequest();
             logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
           }
@@ -110,5 +116,30 @@ public class VkGrabber {
       logger.warning(e.toString());
       streamingClient.getAsyncHttpClient().close();
     }
+  }
+
+  private static String getXMLMessage(StreamingCallbackMessage message, Logger logger) {
+    String type = message.getEvent().getEventType().name();
+    String postText = "";
+    String commentText = "";
+    if (type.equals("COMMENT")) {
+      try {
+        commentText = "<comment:text>\n" + message.getEvent().getText() + "\n</comment:text>\n";
+        String id = message.getEvent().getEventId().getPostOwnerId() + "_" + message.getEvent().getEventId().getPostId();
+        List<WallPostFull> r = vkClient.wall().getById(actor, id).execute();
+        postText = "<post:text>\n" + r.get(0).getText() + "\n</post:text>\n";
+      } catch (ApiException | ClientException e) {
+        logger.info("FAIL GET POST");
+      }
+    }
+    else {
+      postText = "<post:text>\n" + message.getEvent().getText() + "\n</post :text>\n";
+    }
+    return "<message  xmlns:post = \"flamestream/post\"\n" +
+            "    xmlns:comment = \"flamestream/comment\">\n" +
+            postText +
+            commentText +
+            "</message>"
+            ;
   }
 }
