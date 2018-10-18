@@ -75,16 +75,16 @@ public class LentaGrabber {
 
   public static void main(String[] args) throws IOException, JAXBException, InterruptedException {
 
-    final String URL_LENTA = args[0]; // "https://lenta.ru/rss/news";
+    final String urlLenta = args[0]; // "https://lenta.ru/rss/news";
     final String directory = args[1]; //  "../news/";
 
     final JAXBContext jaxbContext = JAXBContext.newInstance(RSS.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     final HttpClient client = new DefaultHttpClient();
-    final HttpGet request = new HttpGet(URL_LENTA);
+    final HttpGet request = new HttpGet(urlLenta);
     Item oldItem = null;
 
-    for(;;) {
+    while(!Thread.currentThread().isInterrupted()) {
       final HttpResponse response = client.execute(request);
       final BufferedReader rd = new BufferedReader
               (new InputStreamReader(
@@ -95,12 +95,9 @@ public class LentaGrabber {
         resp.append(line);
       }
       final StreamSource xml = new StreamSource(new StringReader(resp.toString()));
-      if (oldItem == null) {
-        RSS rss = (RSS) jaxbUnmarshaller.unmarshal(xml);
-        oldItem = rss.getChannel().getItems().get(0);
-      } else {
-        final RSS newrss = (RSS) jaxbUnmarshaller.unmarshal(xml);
-        for (Item i : newrss.getChannel().getItems()) {
+      final RSS rss = (RSS) jaxbUnmarshaller.unmarshal(xml);
+      if (oldItem != null) {
+        for (Item i : rss.getChannel().getItems()) {
           if (i.getPubDate().equals(oldItem.getPubDate())
                   && i.getTitle().equals(oldItem.getTitle())) {
             break;
@@ -116,8 +113,8 @@ public class LentaGrabber {
                   i.getCategory(),
                   builder.toString()));
         }
-        oldItem = newrss.getChannel().getItems().get(0);
       }
+      oldItem = rss.getChannel().getItems().get(0);
       Thread.sleep(60 * 1000);
     }
   }
