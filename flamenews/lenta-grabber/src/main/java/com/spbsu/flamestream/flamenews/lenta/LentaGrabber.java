@@ -17,62 +17,9 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
-import java.util.logging.Logger;
+
 
 public class LentaGrabber {
-
-  private static Logger log = Logger.getLogger(LentaGrabber.class.getName());
-
-  private static void addNewFile (String dirPath, News news) {
-    int curNameOfFile = 0;
-    File theDir = new File(dirPath);
-    if (!theDir.exists()) {
-      log.info("Creating directory: " + dirPath);
-      try{
-        theDir.mkdir();
-        log.info("Directory created");
-      }
-      catch(SecurityException e){
-        log.info(e.getMessage());
-      }
-    }
-
-    File[] files = theDir.listFiles();
-    for (File file : files) {
-      String name = file.getName();
-      int num;
-      try {
-        num = Integer.parseInt(name.substring(0, name.lastIndexOf(".")));
-      } catch (NumberFormatException e) {
-        continue;
-      }
-      if (num > curNameOfFile) {
-        curNameOfFile = num;
-      }
-    }
-
-    curNameOfFile++;
-    String filePath = dirPath + String.valueOf(curNameOfFile) + ".xml";
-    try {
-      FileWriter writer = new FileWriter(filePath, false);
-      writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-      writer.append('\n');
-      writer.write("<item>");
-      writer.append('\n');
-      writer.write("<title>" + news.getTitle() + "</title>");
-      writer.append('\n');
-      writer.write("<text>" + news.getText() + "</text>");
-      writer.append('\n');
-      writer.write("<category>" + news.getCategory() + "</category>");
-      writer.append('\n');
-      writer.write("</item>");
-      writer.flush();
-    }
-    catch (IOException e) {
-      log.info(e.getMessage());
-    }
-  }
-
   public static void main(String[] args) throws IOException, JAXBException, InterruptedException {
 
     final String urlLenta = args[0]; // "https://lenta.ru/rss/news";
@@ -84,6 +31,7 @@ public class LentaGrabber {
     final HttpGet request = new HttpGet(urlLenta);
     Item oldItem = null;
 
+    NewsSaver saveNews = new NewsSaver(directory, -1);
     while(!Thread.currentThread().isInterrupted()) {
       final HttpResponse response = client.execute(request);
       final BufferedReader rd = new BufferedReader
@@ -109,9 +57,7 @@ public class LentaGrabber {
           for (Element link : links) {
             builder.append(link.text()).append(" ");
           }
-          addNewFile(directory, new News(i.getTitle(),
-                  i.getCategory(),
-                  builder.toString()));
+          saveNews.save(new News(i.getTitle(), i.getCategory(), builder.toString()));
         }
       }
       oldItem = rss.getChannel().getItems().get(0);
