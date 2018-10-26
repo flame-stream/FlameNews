@@ -17,13 +17,14 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.util.Map;
 
 
 public class LentaGrabber {
   public static void main(String[] args) throws IOException, JAXBException, InterruptedException {
-
-    final String urlLenta = args[0]; // "https://lenta.ru/rss/news";
-    final String directory = args[1]; //  "../news/";
+    final Map<String, String> env = System.getenv();
+    final String urlLenta = env.getOrDefault("LENTA_URL", "https://lenta.ru/rss/news");
+    final String directory = env.getOrDefault("OUT_DIR", "../news/");
 
     final JAXBContext jaxbContext = JAXBContext.newInstance(RSS.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
@@ -31,14 +32,14 @@ public class LentaGrabber {
     final HttpGet request = new HttpGet(urlLenta);
     Item oldItem = null;
 
-    NewsSaver saveNews = new NewsSaver(directory, -1);
-    while(!Thread.currentThread().isInterrupted()) {
+    final NewsSaver saveNews = new NewsSaver(directory, -1);
+    while (!Thread.currentThread().isInterrupted()) {
       final HttpResponse response = client.execute(request);
       final BufferedReader rd = new BufferedReader
-              (new InputStreamReader(
-                      response.getEntity().getContent()));
+        (new InputStreamReader(
+          response.getEntity().getContent()));
       final StringBuilder resp = new StringBuilder();
-      String line = "";
+      String line;
       while ((line = rd.readLine()) != null) {
         resp.append(line);
       }
@@ -47,7 +48,7 @@ public class LentaGrabber {
       if (oldItem != null) {
         for (Item i : rss.getChannel().getItems()) {
           if (i.getPubDate().equals(oldItem.getPubDate())
-                  && i.getTitle().equals(oldItem.getTitle())) {
+            && i.getTitle().equals(oldItem.getTitle())) {
             break;
           }
           final Document doc = Jsoup.connect(i.getLink()).get();
