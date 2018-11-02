@@ -9,13 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.LockSupport;
-//import com.esotericsoftware.kryonet.Server;
 
 // see ZkFlameClientTest(Front) and BenchStand(producer)
 public class SocketStrategy implements OutputStrategy {
@@ -23,7 +19,6 @@ public class SocketStrategy implements OutputStrategy {
   private final Queue<String> messagesToSend = new ConcurrentLinkedDeque<>();
   private final Server producer;
 
-  // Expose port in docker and put the data there
   public SocketStrategy(String host, int port) {
     producer = new Server(1_000_000, 1000);
     ((Kryo.DefaultInstantiatorStrategy) producer.getKryo().getInstantiatorStrategy())
