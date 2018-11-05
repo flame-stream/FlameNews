@@ -20,6 +20,9 @@ import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
+import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -97,21 +100,28 @@ public class VkGrabber {
                 postText = "<post:text>\n" + r.get(0).getText() + "\n</post:text>\n";
               } catch (ApiException | ClientException e) {
                 logger.info("FAIL GET POST: " + message.getEvent().getEventId().getPostOwnerId() +
-                        "_" + message.getEvent().getEventId().getPostId());
+                  "_" + message.getEvent().getEventId().getPostId());
                 return;
               }
-            }
-            else {
+            } else {
               postText = "<post:text>\n" + message.getEvent().getText() + "\n</post :text>\n";
             }
             final String textMessage = "<message  xmlns:post = \"flamestream/post\"\n" +
-                    "    xmlns:comment = \"flamestream/comment\">\n" +
-                    postText +
-                    commentText +
-                    "</message>";
-            client.send(Instant.ofEpochSecond(message.getEvent().getCreationTime()), textMessage);
-            rpsMeasurer.logRequest();
-            logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
+              "    xmlns:comment = \"flamestream/comment\">\n" +
+              postText +
+              commentText +
+              "</message>";
+
+            try {
+              final Message outMessage = Message.create();
+              outMessage.setBody(textMessage);
+              outMessage.setTo(JID.jidInstance("grabbers@muc.localhost"));
+              client.send(outMessage);
+              rpsMeasurer.logRequest();
+              logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
+            } catch (JaxmppException e) {
+              throw new RuntimeException(e);
+            }
           }
         }).execute().addWebSocketListener(new WebSocketListener() {
           @Override

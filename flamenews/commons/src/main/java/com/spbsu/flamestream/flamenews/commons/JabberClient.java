@@ -3,32 +3,20 @@ package com.spbsu.flamestream.flamenews.commons;
 import com.expleague.commons.util.sync.StateLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tigase.jaxmpp.core.client.AsyncCallback;
-import tigase.jaxmpp.core.client.JID;
-import tigase.jaxmpp.core.client.JaxmppCore;
-import tigase.jaxmpp.core.client.SessionObject;
-import tigase.jaxmpp.core.client.XMPPException;
-import tigase.jaxmpp.core.client.criteria.Criteria;
-import tigase.jaxmpp.core.client.criteria.ElementCriteria;
+import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.XMLException;
-import tigase.jaxmpp.core.client.xmpp.modules.AbstractStanzaModule;
 import tigase.jaxmpp.core.client.xmpp.modules.muc.MucModule;
 import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
 import tigase.jaxmpp.core.client.xmpp.modules.registration.InBandRegistrationModule;
 import tigase.jaxmpp.core.client.xmpp.modules.roster.RosterModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
-import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import tigase.jaxmpp.j2se.J2SEPresenceStore;
 import tigase.jaxmpp.j2se.J2SESessionObject;
 import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.jaxmpp.j2se.connectors.socket.SocketConnector;
-
-import java.time.Instant;
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 public class JabberClient {
   private static final String RESOURCE = "grabber";
@@ -41,11 +29,8 @@ public class JabberClient {
 
   private final String password;
   private final JID jid;
-  private final int storeLimit;
 
   private boolean registered = false;
-
-  private final NavigableMap<Instant, String> messages = new ConcurrentSkipListMap<>();
 
   public JabberClient(String id, String domain, String password) {
     this(id, domain, password, 1000);
@@ -60,9 +45,7 @@ public class JabberClient {
 
     PresenceModule.setPresenceStore(jaxmpp.getSessionObject(), new J2SEPresenceStore());
     jaxmpp.getModulesManager().register(new MucModule());
-    jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
     jaxmpp.getModulesManager().register(new RosterModule());
-    this.storeLimit = storeLimit;
   }
 
   private void start() {
@@ -187,12 +170,12 @@ public class JabberClient {
     }
   }
 
-  public void send(Instant eventTime, String text) {
+  public void send(Stanza stanza) {
     online();
-    messages.put(eventTime, text);
-
-    if (messages.size() > storeLimit) {
-      messages.remove(messages.firstKey());
+    try {
+      jaxmpp.send(stanza);
+    } catch (JaxmppException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -222,49 +205,6 @@ public class JabberClient {
 
     protected void transactionComplete() {
       lock.advance();
-    }
-  }
-
-  private static class PullHandler extends AbstractStanzaModule<Message> {
-    private final Jaxmpp jaxmpp;
-    private final NavigableMap<Instant, String> messages;
-
-    private PullHandler(Jaxmpp jaxmpp, NavigableMap<Instant, String> messages) {
-      this.jaxmpp = jaxmpp;
-      this.messages = messages;
-    }
-
-    @Override
-    public Criteria getCriteria() {
-      return new ElementCriteria("message", new String[0], new String[0]);
-    }
-
-    @Override
-    public String[] getFeatures() {
-      return new String[0];
-    }
-
-    @Override
-    public void process(Message message) {
-      try {
-        final String body = message.getBody();
-        if (body != null) {
-          final Instant requestFrom = Instant.ofEpochSecond(Long.parseLong(body));
-          for (String s : messages.tailMap(requestFrom).values()) {
-            final Message outMessage = Message.create();
-            outMessage.setBody(s);
-            outMessage.setTo(message.getFrom());
-            jaxmpp.send(outMessage);
-          }
-
-          final Message last = Message.create();
-          last.setBody("Last timestamp = " + messages.lastKey().getEpochSecond());
-          last.setTo(message.getFrom());
-          jaxmpp.send(last);
-        }
-      } catch (JaxmppException | NumberFormatException e) {
-        throw new RuntimeException(e);
-      }
     }
   }
 }
