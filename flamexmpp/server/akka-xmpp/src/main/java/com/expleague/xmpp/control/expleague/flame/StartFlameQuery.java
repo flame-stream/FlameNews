@@ -3,11 +3,14 @@ package com.expleague.xmpp.control.expleague.flame;
 import com.expleague.server.services.FlameConfigService;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.xmpp.Item;
+import com.expleague.xmpp.control.expleague.BestAnswerQuery;
 import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
+@XmlRootElement(name = "query", namespace = StartFlameQuery.NS)
 public class StartFlameQuery extends Item {
     public static final String NS = "http://expleague.com/scheme/start-stream";
     static {
@@ -27,6 +30,11 @@ public class StartFlameQuery extends Item {
     private WorkerApplication.Guarantees guarantee;
 
     @XmlAttribute
+    private String host;
+
+    @XmlAttribute
+    private int port;
+
     private DumbInetSocketAddress socketAddress;
 
     public String getId() {
@@ -42,10 +50,23 @@ public class StartFlameQuery extends Item {
     }
 
     public DumbInetSocketAddress getSocketAddress() {
+        if (socketAddress == null)
+            socketAddress = new DumbInetSocketAddress(host, port);
         return socketAddress;
     }
 
     public WorkerApplication.Guarantees getGuarantee() {
         return guarantee;
+    }
+
+    public StartFlameQuery() {
+    }
+
+    public StartFlameQuery(String id, String zkString, String host, int port, WorkerApplication.Guarantees guarantee) {
+        this.id = id;
+        this.zkString = zkString;
+        this.host = host;
+        this.port = port;
+        this.guarantee = guarantee;
     }
 }
