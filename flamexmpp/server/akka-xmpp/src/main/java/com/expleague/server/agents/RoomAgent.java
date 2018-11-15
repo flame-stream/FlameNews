@@ -10,10 +10,12 @@ import com.expleague.server.Subscription;
 import com.expleague.server.dao.Archive;
 import com.expleague.util.akka.ActorMethod;
 import com.expleague.util.akka.PersistentActorAdapter;
+import com.expleague.xmpp.Item;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.receipts.Received;
 import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.muc.MucHistory;
+import com.expleague.xmpp.muc.MucItem;
 import com.expleague.xmpp.muc.MucXData;
 import com.expleague.xmpp.stanza.Iq;
 import com.expleague.xmpp.stanza.Message;
@@ -28,6 +30,9 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.expleague.model.Affiliation.ADMIN;
+import static com.expleague.model.Affiliation.OWNER;
 
 /**
  * User: solar
@@ -65,7 +70,7 @@ public class RoomAgent extends PersistentActorAdapter {
   public JID owner() {
     final Holder<JID> result = new Holder<>();
     participants.forEach((jid, status) -> {
-      if (status.affiliation == Affiliation.OWNER)
+      if (status.affiliation == OWNER)
         result.setValue(jid);
     });
     return result.getValue();
@@ -94,13 +99,26 @@ public class RoomAgent extends PersistentActorAdapter {
   }
 
   @ActorMethod
-  public final void onPresence(Presence presence) {
+  public void onPresence(final Presence presence) {
+    // почему в клиенте PSI хозяину не доступны настройки?
     if (mode() != ProcessMode.NORMAL)
       return;
     if (!filter(presence) || !update(presence))
       return;
-    broadcast(presence);
+    JID user = presence.from();
+    participants.forEach((jid, status) -> {
+      if (status.role == Role.NONE && status.affiliation != OWNER)
+        return;
+      Presence other = new Presence(new JID(this.jid.local(), this.jid.domain(), status.nickname), user, true);
+      other.append(new MucItem(status.role, status.affiliation));
+      XMPP.send(other, context());
+    }); // Service Sends Presence from Existing Occupants to New Occupant
+    broadcast(presence); // Service Sends New Occupant's Presence to All Occupants
+    Presence ans = new Presence(jid, user, true);
+    ans.append(new MucItem(role(user.bare()), affiliation(user.bare())));
+    XMPP.send(ans, context()); //  Service Sends New Occupant's Presence to New Occupant
   }
+
 
   @ActorMethod
   public final void onMessage(Message message) {
@@ -226,11 +244,14 @@ public class RoomAgent extends PersistentActorAdapter {
       final MucAdminQuery query = (MucAdminQuery) iq.get();
       final JID user = XMPP.jid(query.nick());
       if (query.affiliation() != null) {
-        update(user, null, query.affiliation());
-        if (mode == ProcessMode.NORMAL) {
-          //noinspection unchecked
-          XMPP.send(Iq.error(iq).error(new Err(Err.Cause.NOT_ALLOWED, Err.ErrType.CANCEL, null)), context());
-        }
+//        update(user, null, query.affiliation()); - не подходит, т.к. менят лишь при условиях
+        final MucUserStatus status = new MucUserStatus(jid.bare(), query.nick(), query.affiliation());
+        participants.remove(user);
+        participants.put(user, status);
+//        if (mode == ProcessMode.NORMAL) {
+//          //noinspection unchecked
+//          XMPP.send(Iq.error(iq).error(new Err(Err.Cause.NOT_ALLOWED, Err.ErrType.CANCEL, null)), context());
+//        } - зачем эта ошибка?
         return mode != ProcessMode.RECOVER;
       }
     }
@@ -267,7 +288,7 @@ public class RoomAgent extends PersistentActorAdapter {
   }
 
   protected boolean checkAffiliation(JID from, Affiliation affiliation) {
-    return affiliation == null || affiliation(from).priority() <= affiliation.priority();
+    return participants.size() <= 1 || affiliation == null || affiliation(from).priority() <= affiliation.priority();
   }
 
   protected boolean checkRole(JID from, Affiliation affiliation, Role role) {
@@ -355,9 +376,10 @@ public class RoomAgent extends PersistentActorAdapter {
     try {
       if (presence.available()) {
         final MucXData xData = presence.has(MucXData.class) ? presence.get(MucXData.class) : new MucXData();
-        if (xData.role() == null) {
-          final Affiliation affiliation = xData.affiliation() == null ? affiliation(from) : xData.affiliation();
-          xData.role(role != Role.NONE ? role : suggestRole(from, affiliation));
+        if (xData.role() == null || xData.role() == Role.NONE) {
+          xData.affiliation(this.participants.isEmpty() ? OWNER :
+                  (xData.affiliation() == null ? affiliation(from) : xData.affiliation()));
+          xData.role(role != Role.NONE ? role : suggestRole(from, xData.affiliation()));
         }
 
         final boolean rc = update(from, xData.role(), xData.affiliation(), ProcessMode.NORMAL);
@@ -433,7 +455,7 @@ public class RoomAgent extends PersistentActorAdapter {
     if (mode != ProcessMode.NORMAL)
       return;
     participants.forEach((jid, status) -> {
-      if (status.role == Role.NONE && status.affiliation != Affiliation.OWNER)
+      if (status.role == Role.NONE && status.affiliation != OWNER)
         return;
       if (!checkDst(stanza, jid, false))
         return;
