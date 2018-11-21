@@ -57,7 +57,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
 
     static {
         List<Integer> ports = new ArrayList<>(freePorts(2));
-        String zkString = "localhost:" + ports.get(0);
+        String zkString = FlameConfigService.getZkString();
         final Map<String, ActorPath> workersAddresses = new HashMap<>();
         final String name = "worker";
         final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(1));
@@ -82,6 +82,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
                 zkString,
                 new ExponentialBackoffRetry(1000, 3)
         );
+        curator.start();
         try {
             curator.create().orSetData().forPath("/config", new JacksonSerializer().serialize(config));
             remoteRuntime = new RemoteRuntime(curator, new KryoSerializer(), config);

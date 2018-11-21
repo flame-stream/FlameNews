@@ -1,9 +1,6 @@
 package integration_tests;
 
-import akka.actor.ActorPath;
 import akka.actor.ActorSystem;
-import akka.actor.Address;
-import akka.actor.RootActorPath;
 import com.expleague.bots.Bot;
 import com.expleague.server.ExpLeagueServer;
 import com.expleague.server.XMPPServer;
@@ -18,7 +15,6 @@ import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.WorkerApplication;
-import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.zookeeper.server.ZooKeeperApplication;
@@ -77,6 +73,7 @@ public class IqSendTest {
     final Sink sink = new Sink();
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
+    Thread.sleep(5000);
     Await.ready(system.terminate(), Duration.Inf());
   }
 
