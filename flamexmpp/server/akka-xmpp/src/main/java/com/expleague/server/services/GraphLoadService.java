@@ -9,12 +9,15 @@ import com.expleague.util.akka.ActorMethod;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.stanza.Iq;
 import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
 import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.config.ClusterConfig;
 import com.spbsu.flamestream.runtime.config.ComputationProps;
 import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
@@ -94,6 +97,10 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
     @ActorMethod
     public void invoke(Iq<GraphQuery> graphQueryIq) {
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
-        remoteRuntime.run(graph);
+        FlameRuntime.Flame flame = remoteRuntime.run(graph);
+        final List<AkkaFront.FrontHandle<Object>> consumers =
+                flame.attachFront("muc", new AkkaFrontType<>(context().system(), true))
+                        .collect(Collectors.toList());
+        
     }
 }
