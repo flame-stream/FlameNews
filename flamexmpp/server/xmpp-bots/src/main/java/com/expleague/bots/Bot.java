@@ -216,6 +216,20 @@ public class Bot {
     jaxmpp.send(message);
   }
 
+  public void sendIq(BareJID to, StanzaType type, Item... items) throws JaxmppException {
+    final IQ iq = IQ.create();
+    for (Item item : items) {
+      iq.addChild(ItemToTigaseElementParser.parse(item));
+    }
+    if (type != null) {
+      iq.setType(type);
+    }
+    if (to != null) {
+      iq.setTo(JID.jidInstance(to));
+    }
+    jaxmpp.send(iq);
+  }
+
   public ReceivingMessage[] tryReceiveMessages(StateLatch stateLatch, ReceivingMessage... messages) throws JaxmppException {
     final long defaultTimeoutInNanos = 30L * 1000L * 1000L * 1000L;
     return tryReceiveMessages(stateLatch, defaultTimeoutInNanos, messages);
