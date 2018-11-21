@@ -12,7 +12,11 @@ import com.expleague.server.agents.XMPP;
 import com.expleague.server.notifications.NotificationsManager;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.util.akka.ActorAdapter;
+import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.control.expleague.flame.StartFlameQuery;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.core.graph.Sink;
+import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.WorkerApplication;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import com.typesafe.config.Config;
@@ -69,7 +73,10 @@ public class IqSendTest {
     bot.start();
     bot.sendIq(null, StanzaType.set,
               new StartFlameQuery(id, zkString, "localhost", ports.get(1), WorkerApplication.Guarantees.AT_MOST_ONCE));
-
+    final Source source = new Source();
+    final Sink sink = new Sink();
+    bot.sendIq(null, StanzaType.set,
+            new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
     Await.ready(system.terminate(), Duration.Inf());
   }
 
