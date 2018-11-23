@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class NotificationsBot extends TelegramLongPollingCommandBot {
   public NotificationsBot() {
+    // provide chosen name for bot
     super("");
 
     register(new StartCommand());
