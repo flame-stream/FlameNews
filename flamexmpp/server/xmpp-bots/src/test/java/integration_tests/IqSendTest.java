@@ -68,12 +68,12 @@ public class IqSendTest {
     final Bot bot = new Bot(jid, "password", null);
     bot.start();
     bot.sendIq(null, StanzaType.set,
-              new StartFlameQuery(id, zkString, "localhost", ports.get(1), WorkerApplication.Guarantees.AT_MOST_ONCE));
+              new StartFlameQuery(id, zkString, "localhost", 2552, WorkerApplication.Guarantees.AT_MOST_ONCE));
     final Source source = new Source();
     final Sink sink = new Sink();
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
-    Thread.sleep(5000);
+    Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());
   }
 

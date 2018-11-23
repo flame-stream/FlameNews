@@ -18,6 +18,8 @@ import com.spbsu.flamestream.runtime.config.HashGroup;
 import com.spbsu.flamestream.runtime.config.HashUnit;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
@@ -63,7 +65,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         String zkString = FlameConfigService.getZkString();
         final Map<String, ActorPath> workersAddresses = new HashMap<>();
         final String name = "worker";
-        final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", ports.get(1));
+        final DumbInetSocketAddress address = new DumbInetSocketAddress("localhost", 2553);
         final WorkerApplication worker = new WorkerApplication(name, address, zkString);
         final ActorPath path = RootActorPath.apply(Address.apply(
                 "akka",
@@ -98,9 +100,11 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
     public void invoke(Iq<GraphQuery> graphQueryIq) {
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
-        final List<AkkaFront.FrontHandle<Object>> consumers =
+        List<AkkaFront.FrontHandle<Object>> consumers =
                 flame.attachFront("muc", new AkkaFrontType<>(context().system(), true))
                         .collect(Collectors.toList());
-        
+        List<AkkaRear.Handle<String>> rears = flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class)).collect(Collectors.toList());
+        rears.get(0).addListener(System.out::println);
+        consumers.get(0).accept("olololololo!!!!!!!");
     }
 }

@@ -4,7 +4,6 @@ import com.expleague.server.services.GraphLoadService;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.xmpp.Item;
 import com.spbsu.flamestream.core.Graph;
-import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 
 import javax.xml.bind.annotation.XmlAttribute;
