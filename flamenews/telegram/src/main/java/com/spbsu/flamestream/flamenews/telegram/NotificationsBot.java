@@ -10,15 +10,16 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class NotificationsBot extends TelegramLongPollingCommandBot {
   public NotificationsBot() {
-    super("flamestream_bot");
+    super("");
 
     register(new StartCommand());
     register(new HelpCommand(this));
   }
 
+  // provide a token from bot father
   @Override
   public String getBotToken() {
-    return "700148062:AAElhoTDRl1pRT5IqpShJ0bs1u4JNw6Tv6Q";
+    return "";
   }
 
   public void processNonCommandUpdate(Update update) {
