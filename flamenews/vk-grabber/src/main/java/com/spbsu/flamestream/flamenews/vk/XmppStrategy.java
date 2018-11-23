@@ -11,8 +11,9 @@ public class XmppStrategy implements OutputStrategy {
     final int dogIndex = JabberId.indexOf('@');
     client = new JabberClient(
             JabberId.substring(0, dogIndex),
-            JabberId.substring(dogIndex + 1, JabberId.length()),
-            password
+            JabberId.substring(dogIndex + 1),
+            password,
+            1000
     );
 
     client.online();
