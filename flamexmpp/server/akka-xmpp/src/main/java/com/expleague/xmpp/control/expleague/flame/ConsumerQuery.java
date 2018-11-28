@@ -1,12 +1,10 @@
 package com.expleague.xmpp.control.expleague.flame;
 
 import com.expleague.xmpp.Item;
-import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
-import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
-import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Arrays;
 
 @XmlRootElement(name = "query", namespace = ConsumerQuery.NS)
 public class ConsumerQuery extends Item {
@@ -15,20 +13,20 @@ public class ConsumerQuery extends Item {
     @XmlAttribute
     private byte[] serializeFront;
     @XmlAttribute
-    private byte[] serializeRier;
+    private byte[] serializeRear;
 
 
     public ConsumerQuery() {}
 
-    public ConsumerQuery(AkkaFront.FrontHandle<Object> front, AkkaRear.Handle<String> rier) {
-        serializeFront = new KryoSerializer().serialize(front);
-        serializeRier = new KryoSerializer().serialize(rier);
+    public ConsumerQuery(byte[] front, byte[] rear) {
+        serializeFront = Arrays.copyOf(front, front.length);
+        serializeRear = Arrays.copyOf(rear, rear.length);
     }
 
     public byte[] getSerializeFront() {
         return serializeFront;
     }
-    public byte[] getSerializeRier() {
-        return serializeRier;
+    public byte[] getSerializeRear() {
+        return serializeRear;
     }
 }
