@@ -1,6 +1,5 @@
 package com.spbsu.flamestream.flamenews.vk;
 
-import com.spbsu.flamestream.flamenews.commons.JabberClient;
 import com.spbsu.flamestream.flamenews.commons.utils.RpsMeasurer;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
@@ -9,7 +8,6 @@ import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.streaming.responses.GetServerUrlResponse;
-import com.vk.api.sdk.objects.wall.WallPostFull;
 import com.vk.api.sdk.streaming.clients.StreamingEventHandler;
 import com.vk.api.sdk.streaming.clients.VkStreamingApiClient;
 import com.vk.api.sdk.streaming.clients.actors.StreamingActor;
@@ -20,22 +18,14 @@ import org.asynchttpclient.ws.WebSocket;
 import org.asynchttpclient.ws.WebSocketListener;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
-import tigase.jaxmpp.core.client.JID;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class VkGrabber {
-
   public static void main(String[] args) throws Exception {
     if (args.length != 4) {
       throw new IllegalArgumentException(
@@ -44,8 +34,15 @@ public class VkGrabber {
 
     final int appId = Integer.parseInt(args[0]);
     final String accessToken = args[1];
-    final String jid = args[2];
-    final String password = args[3];
+    //final OutputStrategy strategy = new XmppStrategy(args[2],  args[3]);
+    // TODO: extract constants(port should be as in config -- bench-source-port)
+    final OutputStrategy strategy = new SocketStrategy("localhost", 4567);
+
+    processVkStream(appId, accessToken, strategy);
+  }
+
+  private static void processVkStream(int appId, String accessToken, OutputStrategy strategy)
+          throws ClientException, ApiException, IOException {
     final Logger logger = Logger.getLogger(VkGrabber.class.getName());
 
     final TransportClient transportClient = new HttpTransportClient();
@@ -54,8 +51,8 @@ public class VkGrabber {
     final ServiceActor actor = new ServiceActor(appId, accessToken);
     final GetServerUrlResponse getServerUrlResponse = vkClient.streaming().getServerUrl(actor).execute();
     final StreamingActor streamingActor = new StreamingActor(
-      getServerUrlResponse.getEndpoint(),
-      getServerUrlResponse.getKey()
+            getServerUrlResponse.getEndpoint(),
+            getServerUrlResponse.getKey()
     );
 
     final VkStreamingApiClient streamingClient = new VkStreamingApiClient(transportClient);
@@ -66,21 +63,13 @@ public class VkGrabber {
       final Set<String> ruleWords = rules.stream().map(StreamingRule::getValue).collect(Collectors.toSet());
       if (!ruleWords.equals(new HashSet<>(Arrays.asList(keyWords)))) {
         rules.forEach(
-          Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
+                Unchecked.consumer(rule -> streamingClient.rules().delete(streamingActor, rule.getTag()).execute())
         );
         Seq.seq(keyWords, 0, keyWords.length).zipWithIndex()
-          .forEach(Unchecked.consumer(
-            tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
-          );
+                .forEach(Unchecked.consumer(
+                        tuple -> streamingClient.rules().add(streamingActor, String.valueOf(tuple.v2), tuple.v1).execute())
+                );
       }
-
-      final int dogIndex = jid.indexOf('@');
-      final JabberClient client = new JabberClient(
-        jid.substring(0, dogIndex),
-        jid.substring(dogIndex + 1, jid.length()),
-        password
-      );
-      client.online();
 
       final RpsMeasurer rpsMeasurer = new RpsMeasurer();
       while (!Thread.currentThread().isInterrupted()) {
@@ -89,39 +78,10 @@ public class VkGrabber {
           @Override
           public void handle(StreamingCallbackMessage message) {
             logger.info("RECEIVED: " + message);
-            final String type = message.getEvent().getEventType().name();
-            String postText;
-            String commentText = "";
-            if (type.equals("COMMENT")) {
-              try {
-                commentText = "<comment:text>\n" + message.getEvent().getText() + "\n</comment:text>\n";
-                final String id = message.getEvent().getEventId().getPostOwnerId() + "_" + message.getEvent().getEventId().getPostId();
-                final List<WallPostFull> r = vkClient.wall().getById(actor, id).execute();
-                postText = "<post:text>\n" + r.get(0).getText() + "\n</post:text>\n";
-              } catch (ApiException | ClientException e) {
-                logger.info("FAIL GET POST: " + message.getEvent().getEventId().getPostOwnerId() +
-                  "_" + message.getEvent().getEventId().getPostId());
-                return;
-              }
-            } else {
-              postText = "<post:text>\n" + message.getEvent().getText() + "\n</post :text>\n";
-            }
-            final String textMessage = "<message  xmlns:post = \"flamestream/post\"\n" +
-              "    xmlns:comment = \"flamestream/comment\">\n" +
-              postText +
-              commentText +
-              "</message>";
+            strategy.processMessage(message.getEvent().getCreationTime(), message.getEvent().getText());
 
-            try {
-              final Message outMessage = Message.create();
-              outMessage.setBody(textMessage);
-              outMessage.setTo(JID.jidInstance("grabbers@muc.localhost"));
-              client.send(outMessage);
-              rpsMeasurer.logRequest();
-              logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
-            } catch (JaxmppException e) {
-              throw new RuntimeException(e);
-            }
+            rpsMeasurer.logRequest();
+            logger.info("AVERAGE RPS: " + rpsMeasurer.currentAverageRps());
           }
         }).execute().addWebSocketListener(new WebSocketListener() {
           @Override
@@ -141,7 +101,7 @@ public class VkGrabber {
         latch.await();
       }
 
-      client.offline();
+      strategy.close();
     } catch (Exception e) {
       logger.warning(e.toString());
       streamingClient.getAsyncHttpClient().close();
