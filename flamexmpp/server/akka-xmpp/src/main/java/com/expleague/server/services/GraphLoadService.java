@@ -4,8 +4,11 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
+import com.expleague.server.agents.XMPP;
 import com.expleague.util.akka.ActorAdapter;
 import com.expleague.util.akka.ActorMethod;
+import com.expleague.xmpp.JID;
+import com.expleague.xmpp.control.expleague.flame.ConsumerQuery;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.stanza.Iq;
 import com.spbsu.flamestream.core.Graph;
@@ -105,6 +108,8 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
                         .collect(Collectors.toList());
         List<AkkaRear.Handle<String>> rears = flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class)).collect(Collectors.toList());
         rears.get(0).addListener(System.out::println);
-        consumers.get(0).accept("olololololo!!!!!!!");
+        Iq iq = Iq.create(new JID("super_room3000", "muc.localhost", null),
+                new JID(), Iq.IqType.SET, new ConsumerQuery(consumers.get(0), rears.get(0)));
+        XMPP.send(iq, context());
     }
 }
