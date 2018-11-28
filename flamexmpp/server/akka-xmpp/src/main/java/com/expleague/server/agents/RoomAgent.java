@@ -152,14 +152,15 @@ public class RoomAgent extends PersistentActorAdapter {
       return;
     }
 
+    if (consumer != null && message.to().isRoom() && !message.from().isRoom()) {
+      consumer.accept(message.body());
+    }
+
     persist(message, msg -> {
       if (mode() == ProcessMode.REPLAY)
         filter(msg);
       archive(msg);
       if (msg.to() != null && msg.to().resource().isEmpty()) // process only messages
-        if (consumer != null && msg.to().isRoom() && !msg.from().isRoom()) {
-          consumer.accept(msg);
-        }
         process(msg);
       broadcast(msg);
     });

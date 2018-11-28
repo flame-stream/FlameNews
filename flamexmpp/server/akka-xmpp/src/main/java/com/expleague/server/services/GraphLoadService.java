@@ -116,11 +116,11 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         rears.get(0).addListener(System.out::println);
 
         final Serialization serialization = SerializationExtension.get(context().getSystem());
-        final byte[] data1 = serialization.serialize(consumers.get(0)).get();
-        final byte[] data2 = serialization.serialize(rears.get(0)).get();
+        final byte[] front = serialization.serialize(consumers.get(0)).get();
+        final byte[] rear = serialization.serialize(rears.get(0)).get();
 
         Iq iq = Iq.create(new JID("super_room3000", "muc.localhost", null),
-                new JID(), Iq.IqType.SET, new ConsumerQuery(data1, data2));
+                new JID(), Iq.IqType.SET, new ConsumerQuery(front, rear));
         XMPP.send(iq, context());
     }
 }

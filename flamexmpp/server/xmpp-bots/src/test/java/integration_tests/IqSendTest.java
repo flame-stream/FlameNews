@@ -1,5 +1,6 @@
 package integration_tests;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.expleague.bots.Bot;
 import com.expleague.server.ExpLeagueServer;
@@ -9,12 +10,17 @@ import com.expleague.server.agents.XMPP;
 import com.expleague.server.notifications.NotificationsManager;
 import com.expleague.server.services.XMPPServices;
 import com.expleague.util.akka.ActorAdapter;
+import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.control.expleague.flame.StartFlameQuery;
+import com.expleague.xmpp.muc.MucItem;
+import com.expleague.xmpp.stanza.Message;
+import com.expleague.xmpp.stanza.Presence;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.core.graph.Sink;
 import com.spbsu.flamestream.core.graph.Source;
 import com.spbsu.flamestream.runtime.WorkerApplication;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.zookeeper.server.ZooKeeperApplication;
@@ -24,11 +30,14 @@ import scala.concurrent.duration.Duration;
 import tigase.jaxmpp.core.client.BareJID;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.stanzas.StanzaType;
+import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+
+import static akka.actor.TypedActor.context;
 
 public class IqSendTest {
   @Test
@@ -67,12 +76,19 @@ public class IqSendTest {
     BareJID jid = BareJID.bareJIDInstance(id, serverCfg.domain());
     final Bot bot = new Bot(jid, "password", null);
     bot.start();
+    final JID realJID = new JID(jid.getLocalpart(), jid.getDomain(), null);
+    final JID room = new JID("super_room3000", "muc.localhost", null);
+    Presence pres = new Presence(realJID, room,  true);
+    XMPP.send(pres, system);
     bot.sendIq(null, StanzaType.set,
               new StartFlameQuery(id, zkString, "localhost", 2552, WorkerApplication.Guarantees.AT_MOST_ONCE));
     final Source source = new Source();
     final Sink sink = new Sink();
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
+    Thread.sleep(10000);
+    Message mes = new Message(realJID, room, "ДАРОВА");
+    XMPP.send(mes, system);
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());
   }
