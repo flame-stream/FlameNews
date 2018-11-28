@@ -6,14 +6,17 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import akka.serialization.Serialization;
 import akka.serialization.SerializationExtension;
-import akka.serialization.Serializer;
+import com.expleague.model.Role;
 import com.expleague.server.agents.XMPP;
 import com.expleague.util.akka.ActorAdapter;
 import com.expleague.util.akka.ActorMethod;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.ConsumerQuery;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
+import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.stanza.Iq;
+import com.expleague.xmpp.stanza.Message;
+import com.expleague.xmpp.stanza.Presence;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
@@ -26,19 +29,18 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.expleague.model.Affiliation.MEMBER;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MAX_ELEMENTS_IN_GRAPH;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MILLIS_BETWEEN_COMMITS;
 
@@ -103,8 +105,22 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         }
     }
 
+    // JabberIdTo -- room, ends with @muc.localhost
+    private void initRoom(JID from, JID to) {
+        Presence creation = new Presence(from, to, true);
+        XMPP.send(creation, context());
+    }
+
     @ActorMethod
     public void invoke(Iq<GraphQuery> graphQueryIq) {
+        // first member(me@localhost) -- muc creator
+        JID owner = new JID("test", "muc.localhost", null);
+        JID room = new JID("me", "localhost", null);
+        initRoom(owner, room);
+        // sending iq for agent, so he can read the messages from muc
+        Iq setter = Iq.create(owner, room,
+                Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, Role.PARTICIPANT));
+        XMPP.send(setter, context());
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
         List<AkkaFront.FrontHandle<Object>> consumers =
@@ -113,7 +129,9 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         List<AkkaRear.Handle<String>> rears =
                 flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class))
                         .collect(Collectors.toList());
-        rears.get(0).addListener(System.out::println);
+        rears.get(0).addListener((word) -> {
+            XMPP.send(new Message(owner, room, word), context());
+        }); // send to room
 
         final Serialization serialization = SerializationExtension.get(context().getSystem());
         final byte[] data1 = serialization.serialize(consumers.get(0)).get();
