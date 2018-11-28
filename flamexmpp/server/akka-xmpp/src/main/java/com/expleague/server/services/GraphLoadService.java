@@ -4,6 +4,9 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorPath;
 import akka.actor.Address;
 import akka.actor.RootActorPath;
+import akka.serialization.Serialization;
+import akka.serialization.SerializationExtension;
+import akka.serialization.Serializer;
 import com.expleague.server.agents.XMPP;
 import com.expleague.util.akka.ActorAdapter;
 import com.expleague.util.akka.ActorMethod;
@@ -23,6 +26,7 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
+import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
@@ -106,10 +110,17 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         List<AkkaFront.FrontHandle<Object>> consumers =
                 flame.attachFront("muc", new AkkaFrontType<>(context().system(), true))
                         .collect(Collectors.toList());
-        List<AkkaRear.Handle<String>> rears = flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class)).collect(Collectors.toList());
+        List<AkkaRear.Handle<String>> rears =
+                flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class))
+                        .collect(Collectors.toList());
         rears.get(0).addListener(System.out::println);
+
+        final Serialization serialization = SerializationExtension.get(context().getSystem());
+        final byte[] data1 = serialization.serialize(consumers.get(0)).get();
+        final byte[] data2 = serialization.serialize(rears.get(0)).get();
+
         Iq iq = Iq.create(new JID("super_room3000", "muc.localhost", null),
-                new JID(), Iq.IqType.SET, new ConsumerQuery(consumers.get(0), rears.get(0)));
+                new JID(), Iq.IqType.SET, new ConsumerQuery(data1, data2));
         XMPP.send(iq, context());
     }
 }

@@ -4,6 +4,8 @@ import akka.actor.ActorRef;
 import akka.persistence.DeleteMessagesFailure;
 import akka.persistence.DeleteMessagesSuccess;
 import akka.persistence.RecoveryCompleted;
+import akka.serialization.Serialization;
+import akka.serialization.SerializationExtension;
 import com.expleague.model.*;
 import com.expleague.server.Roster;
 import com.expleague.server.Subscription;
@@ -166,8 +168,9 @@ public class RoomAgent extends PersistentActorAdapter {
   @ActorMethod
   public final void onIq(Iq command) {
     if (command.type() == Iq.IqType.SET && command.get() instanceof ConsumerQuery) {
-      consumer = new KryoSerializer()
-              .deserialize(((ConsumerQuery) command.get()).getSerializeFront(), AkkaFront.FrontHandle.class);
+      final Serialization serialization = SerializationExtension.get(context().getSystem());
+      consumer = serialization.deserialize(((ConsumerQuery) command.get()).getSerializeFront(),
+              AkkaFront.FrontHandle.class).get();
       return;
     } // если пришел консьюмер, то больше ничего важного в iq нет
     if (process(command))
