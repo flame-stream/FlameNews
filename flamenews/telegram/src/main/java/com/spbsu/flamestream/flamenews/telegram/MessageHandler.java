@@ -14,7 +14,8 @@ public class MessageHandler extends AbstractStanzaModule<Message> {
   @Override
   public void process(Message message) throws JaxmppException {
     // push message to queue for further delivery
-    StartCommand.getMessages().add(message);
+    //StartCommand.getMessages().add(message);
+    System.out.println(message.getBody());
   }
 
   @Override

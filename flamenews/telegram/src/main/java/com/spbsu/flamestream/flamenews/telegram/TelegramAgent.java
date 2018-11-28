@@ -26,7 +26,7 @@ public class TelegramAgent extends JabberClient {
 
   public TelegramAgent(String id, String domain, String password, MessageHandler handler) throws TelegramApiRequestException {
     super(id, domain, password, handler);
-    startBot();
+    //startBot();
 
     online();
   }
@@ -38,14 +38,17 @@ public class TelegramAgent extends JabberClient {
     telegramBotsApi.registerBot(new NotificationsBot());
   }
 
+  // same as in GraphLoadService
+  // test@muc.localhost -- room
+  // tg@localhost -- telegram
   public static void main(String[] args) throws TelegramApiRequestException {
-    if (args.length != 2) {
+    if (false) { //args.length != 2
       throw new IllegalArgumentException(
               "Parameters number is invalid. Please set {Jabber JID} {Jabber password}");
     }
 
-    String jabberId = args[0];
-    String password = args[1];
+    String jabberId = "tg@localhost";//args[0];
+    String password = "12345";//args[1];
     MessageHandler handler = new MessageHandler();
 
     TelegramAgent agent = getAgent(jabberId, password, handler);
