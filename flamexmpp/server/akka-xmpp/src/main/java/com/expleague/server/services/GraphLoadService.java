@@ -40,31 +40,31 @@ import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MILLIS_BETWEEN_
 
 public class GraphLoadService extends ActorAdapter<AbstractActor> {
     private static RemoteRuntime remoteRuntime;
-    private static Set<Integer> freePorts(int n) {
-        final Set<ServerSocket> sockets = new HashSet<>();
-        final Set<Integer> ports = new HashSet<>();
-        try {
-            for (int i = 0; i < n; ++i) {
-                final ServerSocket socket = new ServerSocket(0);
-                ports.add(socket.getLocalPort());
-                sockets.add(socket);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            for (ServerSocket socket : sockets) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return ports;
-    }
+//    private static Set<Integer> freePorts(int n) {
+//        final Set<ServerSocket> sockets = new HashSet<>();
+//        final Set<Integer> ports = new HashSet<>();
+//        try {
+//            for (int i = 0; i < n; ++i) {
+//                final ServerSocket socket = new ServerSocket(0);
+//                ports.add(socket.getLocalPort());
+//                sockets.add(socket);
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            for (ServerSocket socket : sockets) {
+//                try {
+//                    socket.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        return ports;
+//    }
 
     static {
-        List<Integer> ports = new ArrayList<>(freePorts(2));
+        List<Integer> ports = new ArrayList<Integer>();
         String zkString = FlameConfigService.getZkString();
         final Map<String, ActorPath> workersAddresses = new HashMap<>();
         final String name = "worker";

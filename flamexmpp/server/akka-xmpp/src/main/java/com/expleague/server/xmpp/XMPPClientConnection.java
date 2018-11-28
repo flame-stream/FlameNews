@@ -318,7 +318,7 @@ public class XMPPClientConnection extends ActorAdapter<AbstractActor> {
 
   private static SslContext getSslContextWithCertificateAndPrivateKey(final X509Certificate certificate, final PrivateKey privateKey, final String privateKeyPassword) throws SSLException {
     return SslContextBuilder.forServer(privateKey, privateKeyPassword, certificate)
-        .sslProvider(unitTestEnabled ? SslProvider.JDK : SslProvider.OPENSSL)
+            .sslProvider(SslProvider.JDK)
 //        .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
         .build();
   }

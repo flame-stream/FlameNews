@@ -12,6 +12,7 @@ import com.expleague.util.akka.ActorMethod;
 import com.expleague.util.akka.PersistentActorAdapter;
 import com.expleague.xmpp.Item;
 import com.expleague.xmpp.JID;
+import com.expleague.xmpp.control.expleague.flame.ConsumerQuery;
 import com.expleague.xmpp.control.receipts.Received;
 import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.muc.MucHistory;
@@ -24,6 +25,9 @@ import com.expleague.xmpp.stanza.Presence;
 import com.expleague.xmpp.stanza.Stanza;
 import com.expleague.xmpp.stanza.data.Err;
 import com.expleague.commons.util.Holder;
+import com.spbsu.flamestream.core.Graph;
+import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
+import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -54,6 +58,8 @@ public class RoomAgent extends PersistentActorAdapter {
 
   private String updatedOwner;
   private String prevOwner;
+
+  private AkkaFront.FrontHandle<Object> consumer = null;
 
   public RoomAgent(JID jid, boolean archive) {
     this.jid = jid;
@@ -149,6 +155,9 @@ public class RoomAgent extends PersistentActorAdapter {
         filter(msg);
       archive(msg);
       if (msg.to() != null && msg.to().resource().isEmpty()) // process only messages
+        if (consumer != null && msg.to().isRoom() && !msg.from().isRoom()) {
+          consumer.accept(msg);
+        }
         process(msg);
       broadcast(msg);
     });
@@ -156,6 +165,11 @@ public class RoomAgent extends PersistentActorAdapter {
 
   @ActorMethod
   public final void onIq(Iq command) {
+    if (command.type() == Iq.IqType.SET && command.get() instanceof ConsumerQuery) {
+      consumer = new KryoSerializer()
+              .deserialize(((ConsumerQuery) command.get()).getSerializeFront(), AkkaFront.FrontHandle.class);
+      return;
+    } // если пришел консьюмер, то больше ничего важного в iq нет
     if (process(command))
       if (mode != ProcessMode.RECOVER)
         persist(command, this::archive);
