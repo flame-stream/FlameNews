@@ -13,7 +13,10 @@ import com.expleague.util.akka.ActorMethod;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.ConsumerQuery;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
+import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.stanza.Iq;
+import com.expleague.xmpp.stanza.Message;
+import com.expleague.xmpp.stanza.Presence;
 import com.spbsu.flamestream.core.Graph;
 import com.spbsu.flamestream.runtime.FlameRuntime;
 import com.spbsu.flamestream.runtime.RemoteRuntime;
@@ -39,33 +42,13 @@ import java.net.ServerSocket;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.expleague.model.Affiliation.MEMBER;
+import static com.expleague.model.Role.PARTICIPANT;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MAX_ELEMENTS_IN_GRAPH;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MILLIS_BETWEEN_COMMITS;
 
 public class GraphLoadService extends ActorAdapter<AbstractActor> {
     private static RemoteRuntime remoteRuntime;
-//    private static Set<Integer> freePorts(int n) {
-//        final Set<ServerSocket> sockets = new HashSet<>();
-//        final Set<Integer> ports = new HashSet<>();
-//        try {
-//            for (int i = 0; i < n; ++i) {
-//                final ServerSocket socket = new ServerSocket(0);
-//                ports.add(socket.getLocalPort());
-//                sockets.add(socket);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            for (ServerSocket socket : sockets) {
-//                try {
-//                    socket.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        return ports;
-//    }
 
     static {
         List<Integer> ports = new ArrayList<Integer>();
@@ -105,21 +88,35 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
 
     @ActorMethod
     public void invoke(Iq<GraphQuery> graphQueryIq) {
+        // first member(me@localhost) -- muc creator
+        JID room = new JID("rear", "muc.localhost", null);
+        JID owner = new JID("rear-worker", "localhost", null);
+        Presence creation = new Presence(owner, room, true);
+        XMPP.send(creation, context());
+        // sending iq for agent, so he can read the messages from muc
+        Iq setter = Iq.create(room, owner,
+                Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, PARTICIPANT));
+        XMPP.send(setter, context());
+//        JID tg = new JID("tg", "localhost", null);
+//        Presence enter = new Presence(tg, room, true);
+//        XMPP.send(enter, context());
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
         List<AkkaFront.FrontHandle<Object>> consumers =
-                flame.attachFront("muc", new AkkaFrontType<>(context().system(), true))
+                flame.attachFront("front-room", new AkkaFrontType<>(context().system(), true))
                         .collect(Collectors.toList());
         List<AkkaRear.Handle<String>> rears =
-                flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class))
+                flame.attachRear("rear-room", new AkkaRearType<>(context().system(), String.class))
                         .collect(Collectors.toList());
-        rears.get(0).addListener(System.out::println);
+        rears.get(0).addListener((word) -> {
+            XMPP.send(new Message(owner, room, word), context());
+        }); // send to room
 
         final Serialization serialization = SerializationExtension.get(context().getSystem());
         final byte[] front = serialization.serialize(consumers.get(0)).get();
         final byte[] rear = serialization.serialize(rears.get(0)).get();
 
-        Iq iq = Iq.create(new JID("super_room3000", "muc.localhost", null),
+        Iq iq = Iq.create(new JID("front", "muc.localhost", null),
                 new JID(), Iq.IqType.SET, new ConsumerQuery(front, rear));
         XMPP.send(iq, context());
     }
