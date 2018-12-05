@@ -6,7 +6,7 @@ import akka.actor.Address;
 import akka.actor.RootActorPath;
 import akka.serialization.Serialization;
 import akka.serialization.SerializationExtension;
-import akka.serialization.Serializer;
+import com.expleague.model.Role;
 import com.expleague.server.agents.XMPP;
 import com.expleague.util.akka.ActorAdapter;
 import com.expleague.util.akka.ActorMethod;
@@ -29,21 +29,20 @@ import com.spbsu.flamestream.runtime.edge.akka.AkkaFront;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaFrontType;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRear;
 import com.spbsu.flamestream.runtime.edge.akka.AkkaRearType;
-import com.spbsu.flamestream.runtime.serialization.FlameSerializer;
 import com.spbsu.flamestream.runtime.serialization.JacksonSerializer;
 import com.spbsu.flamestream.runtime.serialization.KryoSerializer;
 import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.expleague.model.Affiliation.MEMBER;
 import static com.expleague.model.Role.PARTICIPANT;
+
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MAX_ELEMENTS_IN_GRAPH;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MILLIS_BETWEEN_COMMITS;
 
@@ -86,6 +85,12 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         }
     }
 
+    // JabberIdTo -- room, ends with @muc.localhost
+    private void initRoom(JID from, JID to) {
+        Presence creation = new Presence(from, to, true);
+        XMPP.send(creation, context());
+    }
+
     @ActorMethod
     public void invoke(Iq<GraphQuery> graphQueryIq) {
         // first member(me@localhost) -- muc creator
@@ -97,9 +102,6 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         Iq setter = Iq.create(room, owner,
                 Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, PARTICIPANT));
         XMPP.send(setter, context());
-//        JID tg = new JID("tg", "localhost", null);
-//        Presence enter = new Presence(tg, room, true);
-//        XMPP.send(enter, context());
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
         List<AkkaFront.FrontHandle<Object>> consumers =
