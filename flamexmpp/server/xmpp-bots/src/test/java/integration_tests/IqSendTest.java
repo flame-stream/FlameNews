@@ -77,7 +77,7 @@ public class IqSendTest {
     final Bot bot = new Bot(jid, "password", null);
     bot.start();
     final JID realJID = new JID(jid.getLocalpart(), jid.getDomain(), null);
-    final JID room = new JID("super_room3000", "muc.localhost", null);
+    final JID room = new JID("front", "muc.localhost", null);
     Presence pres = new Presence(realJID, room,  true);
     XMPP.send(pres, system);
     bot.sendIq(null, StanzaType.set,
@@ -86,8 +86,8 @@ public class IqSendTest {
     final Sink sink = new Sink();
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
-    Thread.sleep(10000);
-    Message mes = new Message(realJID, room, "ДАРОВА");
+    Thread.sleep(15000);
+    Message mes = new Message(realJID, room, "Test is OK!");
     XMPP.send(mes, system);
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());
