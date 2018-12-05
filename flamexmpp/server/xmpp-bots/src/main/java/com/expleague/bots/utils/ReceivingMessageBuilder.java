@@ -7,7 +7,9 @@ import com.expleague.commons.util.Pair;
 import tigase.jaxmpp.core.client.BareJID;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: Artem
@@ -15,17 +17,18 @@ import java.util.List;
  * Time: 16:17
  */
 public class ReceivingMessageBuilder {
-  private final List<Pair<Class, Filter>> filters = new ArrayList<>();
+  private Map<Class, Filter> filters = new HashMap<>();
   private JID from = null;
+  private boolean isMessage = true;
   private boolean expected = true;
 
   public <T extends Item> ReceivingMessageBuilder has(Class<T> clazz) {
-    filters.add(new Pair<>(clazz, null));
+    filters.put(clazz, null);
     return this;
   }
 
   public <T extends Item> ReceivingMessageBuilder has(Class<T> clazz, Filter<T> filter) {
-    filters.add(new Pair<>(clazz, filter));
+    filters.put(clazz, filter);
     return this;
   }
 
@@ -39,12 +42,22 @@ public class ReceivingMessageBuilder {
     return this;
   }
 
+  public ReceivingMessageBuilder isMessage() {
+    this.isMessage = true;
+    return this;
+  }
+
+  public ReceivingMessageBuilder isPresence() {
+    this.isMessage = false;
+    return this;
+  }
+
   public ReceivingMessageBuilder expected(boolean expected) {
     this.expected = expected;
     return this;
   }
 
-  public ReceivingMessage build() {
-    return new ReceivingMessage(from, filters, expected);
+  public Receiving build() {
+    return new Receiving(from, isMessage, filters, expected);
   }
 }

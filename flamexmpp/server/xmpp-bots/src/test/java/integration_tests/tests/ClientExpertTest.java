@@ -3,7 +3,7 @@ package integration_tests.tests;
 import com.expleague.bots.AdminBot;
 import com.expleague.bots.ClientBot;
 import com.expleague.bots.ExpertBot;
-import com.expleague.bots.utils.ReceivingMessage;
+import com.expleague.bots.utils.Receiving;
 import com.expleague.bots.utils.ReceivingMessageBuilder;
 import com.expleague.model.Operations;
 import com.expleague.commons.util.sync.StateLatch;
@@ -37,7 +37,7 @@ public class ClientExpertTest extends BaseRoomTest {
     final ExpertBot expertBot = botsManager.nextExpert();
 
     final BareJID roomJID = obtainRoomProgressState(testName(), clientBot, adminBot, expertBot);
-    final ReceivingMessage expectedCancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, expertBot)).has(Operations.Cancel.class).build();
+    final Receiving expectedCancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, expertBot)).has(Operations.Cancel.class).build();
 
     //Act
     expertBot.sendGroupchat(roomJID, new Operations.Cancel());

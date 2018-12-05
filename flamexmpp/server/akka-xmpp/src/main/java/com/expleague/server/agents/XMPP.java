@@ -176,7 +176,7 @@ public class XMPP extends ActorAdapter<AbstractActor> {
     else if (RepositoryService.ID.equals(jid.local()))
       return props(RepositoryService.class, jid.bare());
     else if (jid.domain().startsWith("muc."))
-      return props(RoomAgent.class, jid.bare(), true);
+      return props(RoomAgent.class, jid.bare(), false); //must be true, false id for testing
     else
       return props(UserAgent.class, jid.bare());
   }

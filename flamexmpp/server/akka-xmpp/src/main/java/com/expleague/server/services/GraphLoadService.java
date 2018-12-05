@@ -35,39 +35,18 @@ import com.spbsu.flamestream.runtime.utils.DumbInetSocketAddress;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.expleague.model.Affiliation.MEMBER;
+import static com.expleague.model.Role.PARTICIPANT;
+
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MAX_ELEMENTS_IN_GRAPH;
 import static com.spbsu.flamestream.runtime.FlameRuntime.DEFAULT_MILLIS_BETWEEN_COMMITS;
 
 public class GraphLoadService extends ActorAdapter<AbstractActor> {
     private static RemoteRuntime remoteRuntime;
-//    private static Set<Integer> freePorts(int n) {
-//        final Set<ServerSocket> sockets = new HashSet<>();
-//        final Set<Integer> ports = new HashSet<>();
-//        try {
-//            for (int i = 0; i < n; ++i) {
-//                final ServerSocket socket = new ServerSocket(0);
-//                ports.add(socket.getLocalPort());
-//                sockets.add(socket);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            for (ServerSocket socket : sockets) {
-//                try {
-//                    socket.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        return ports;
-//    }
 
     static {
         List<Integer> ports = new ArrayList<Integer>();
@@ -105,29 +84,18 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         }
     }
 
-    // JabberIdTo -- room, ends with @muc.localhost
-    private void initRoom(JID from, JID to) {
-        Presence creation = new Presence(from, to, true);
-        XMPP.send(creation, context());
-    }
-
     @ActorMethod
     public void invoke(Iq<GraphQuery> graphQueryIq) {
         // first member(me@localhost) -- muc creator
-        JID owner = new JID("test", "muc.localhost", null);
-        JID room = new JID("me", "localhost", null);
-        initRoom(owner, room);
-        // sending iq for agent, so he can read the messages from muc
-        Iq setter = Iq.create(owner, room,
-                Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, Role.PARTICIPANT));
-        XMPP.send(setter, context());
+        JID room = new JID("rear", "muc.localhost", null);
+        JID owner = new JID("rear-worker", "localhost", null);
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
         List<AkkaFront.FrontHandle<Object>> consumers =
-                flame.attachFront("muc", new AkkaFrontType<>(context().system(), true))
+                flame.attachFront("front-room", new AkkaFrontType<>(context().system(), true))
                         .collect(Collectors.toList());
         List<AkkaRear.Handle<String>> rears =
-                flame.attachRear("mega-rear", new AkkaRearType<>(context().system(), String.class))
+                flame.attachRear("rear-room", new AkkaRearType<>(context().system(), String.class))
                         .collect(Collectors.toList());
         rears.get(0).addListener((word) -> {
             XMPP.send(new Message(owner, room, word), context());
@@ -137,7 +105,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
         final byte[] front = serialization.serialize(consumers.get(0)).get();
         final byte[] rear = serialization.serialize(rears.get(0)).get();
 
-        Iq iq = Iq.create(new JID("super_room3000", "muc.localhost", null),
+        Iq iq = Iq.create(new JID("front", "muc.localhost", null),
                 new JID(), Iq.IqType.SET, new ConsumerQuery(front, rear));
         XMPP.send(iq, context());
     }

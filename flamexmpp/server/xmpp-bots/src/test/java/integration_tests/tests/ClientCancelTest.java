@@ -3,7 +3,7 @@ package integration_tests.tests;
 import com.expleague.bots.AdminBot;
 import com.expleague.bots.ClientBot;
 import com.expleague.bots.ExpertBot;
-import com.expleague.bots.utils.ReceivingMessage;
+import com.expleague.bots.utils.Receiving;
 import com.expleague.bots.utils.ReceivingMessageBuilder;
 import com.expleague.model.Answer;
 import com.expleague.model.Offer;
@@ -29,7 +29,7 @@ public class ClientCancelTest extends BaseRoomTest {
     final ClientBot clientBot = botsManager.nextClient();
     final BareJID roomJID = obtainRoomOpenState(testName(), clientBot);
     clientBot.sendGroupchat(roomJID, new Operations.Cancel());
-    final ReceivingMessage roomInfo = new ReceivingMessageBuilder()
+    final Receiving roomInfo = new ReceivingMessageBuilder()
         .from(groupChatJID(roomJID))
         .has(Offer.class)
         .has(Operations.RoomStateChanged.class, rsc -> RoomState.CLOSED == rsc.state())
@@ -37,7 +37,7 @@ public class ClientCancelTest extends BaseRoomTest {
 
     //Act
     final AdminBot adminBot = botsManager.nextAdmin();
-    final ReceivingMessage[] notReceivedMessages = adminBot.tryReceiveMessages(new StateLatch(), roomInfo);
+    final Receiving[] notReceivedMessages = adminBot.tryReceiveMessages(new StateLatch(), roomInfo);
 
     //Assert
     assertThereAreNoFailedMessages(notReceivedMessages);
@@ -62,11 +62,11 @@ public class ClientCancelTest extends BaseRoomTest {
 
     final BareJID roomJID = obtainRoomOpenState(testName(), clientBot, adminBot);
     final Message.Body body = new Message.Body(generateRandomString());
-    final ReceivingMessage message = new ReceivingMessageBuilder().from(botRoomJID(roomJID, adminBot)).has(Message.Body.class, b -> body.value().equals(b.value())).build();
+    final Receiving message = new ReceivingMessageBuilder().from(botRoomJID(roomJID, adminBot)).has(Message.Body.class, b -> body.value().equals(b.value())).build();
 
     //Act
     adminBot.sendGroupchat(roomJID, body);
-    final ReceivingMessage[] notReceivedMessagesByClient = clientBot.tryReceiveMessages(new StateLatch(), message);
+    final Receiving[] notReceivedMessagesByClient = clientBot.tryReceiveMessages(new StateLatch(), message);
     //Assert
     assertThereAreNoFailedMessages(notReceivedMessagesByClient);
 
@@ -82,11 +82,11 @@ public class ClientCancelTest extends BaseRoomTest {
 
     final BareJID roomJID = obtainRoomOpenState(testName(), clientBot, adminBot);
     final Answer answer = new Answer(generateRandomString());
-    final ReceivingMessage expectedAnswer = new ReceivingMessageBuilder().from(botRoomJID(roomJID, adminBot)).has(Answer.class, a -> answer.value().equals(a.value())).build();
+    final Receiving expectedAnswer = new ReceivingMessageBuilder().from(botRoomJID(roomJID, adminBot)).has(Answer.class, a -> answer.value().equals(a.value())).build();
 
     //Act
     adminBot.sendGroupchat(roomJID, answer);
-    final ReceivingMessage[] notReceivedMessagesByClient = clientBot.tryReceiveMessages(new StateLatch(), expectedAnswer);
+    final Receiving[] notReceivedMessagesByClient = clientBot.tryReceiveMessages(new StateLatch(), expectedAnswer);
     //Assert
     assertThereAreNoFailedMessages(notReceivedMessagesByClient);
 
@@ -126,7 +126,7 @@ public class ClientCancelTest extends BaseRoomTest {
     final ClientBot clientBot = botsManager.nextClient();
 
     final BareJID roomJID = obtainRoomFeedbackState(testName(), clientBot, adminBot, expertBot);
-    final ReceivingMessage cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, clientBot)).has(Operations.Cancel.class).build();
+    final Receiving cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, clientBot)).has(Operations.Cancel.class).build();
 
     //Act
     clientBot.sendGroupchat(roomJID, new Operations.Cancel());
@@ -137,11 +137,11 @@ public class ClientCancelTest extends BaseRoomTest {
 
   private void checkAdminHandlesCancel(BareJID roomJID, ClientBot clientBot, AdminBot adminBot) throws JaxmppException {
     //Arrange
-    final ReceivingMessage roomStateChanged = new ReceivingMessageBuilder().from(groupChatJID(roomJID)).has(Operations.RoomStateChanged.class, rsc -> RoomState.CLOSED == rsc.state()).build();
+    final Receiving roomStateChanged = new ReceivingMessageBuilder().from(groupChatJID(roomJID)).has(Operations.RoomStateChanged.class, rsc -> RoomState.CLOSED == rsc.state()).build();
 
     //Act
     clientBot.sendGroupchat(roomJID, new Operations.Cancel());
-    final ReceivingMessage[] notReceivedMessages = adminBot.tryReceiveMessages(new StateLatch(), roomStateChanged);
+    final Receiving[] notReceivedMessages = adminBot.tryReceiveMessages(new StateLatch(), roomStateChanged);
 
     //Assert
     assertThereAreNoFailedMessages(notReceivedMessages);

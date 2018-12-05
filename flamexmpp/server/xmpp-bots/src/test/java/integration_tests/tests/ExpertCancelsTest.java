@@ -3,7 +3,7 @@ package integration_tests.tests;
 import com.expleague.bots.AdminBot;
 import com.expleague.bots.ClientBot;
 import com.expleague.bots.ExpertBot;
-import com.expleague.bots.utils.ReceivingMessage;
+import com.expleague.bots.utils.Receiving;
 import com.expleague.bots.utils.ReceivingMessageBuilder;
 import com.expleague.model.*;
 import com.expleague.xmpp.JID;
@@ -32,7 +32,7 @@ public class ExpertCancelsTest extends BaseRoomTest {
     final BareJID roomJID = obtainRoomWorkState(testName(), clientBot, adminBot, firstExpertBot, secondExpertBot);
 
     final ReceivingMessageBuilder invite = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Invite.class);
-    final ReceivingMessage cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, firstExpertBot)).has(Operations.Cancel.class).build();
+    final Receiving cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, firstExpertBot)).has(Operations.Cancel.class).build();
 
     //Act
     firstExpertBot.sendGroupchat(roomJID, new Operations.Ok());
@@ -60,9 +60,9 @@ public class ExpertCancelsTest extends BaseRoomTest {
     final BareJID roomJID = obtainRoomWorkState(testName(), clientBot, adminBot, firstExpertBot, secondExpertBot);
 
     final ReceivingMessageBuilder invite = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Invite.class);
-    final ReceivingMessage cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, firstExpertBot)).has(Operations.Cancel.class).build();
+    final Receiving cancel = new ReceivingMessageBuilder().from(botRoomJID(roomJID, firstExpertBot)).has(Operations.Cancel.class).build();
     final ReceivingMessageBuilder startAndExpert = new ReceivingMessageBuilder().from(roomJID).has(Operations.Start.class).has(ExpertsProfile.class);
-    final ReceivingMessage offerCheck = new ReceivingMessageBuilder().from(domainJID()).has(Offer.class).has(Operations.Check.class).build();
+    final Receiving offerCheck = new ReceivingMessageBuilder().from(domainJID()).has(Offer.class).has(Operations.Check.class).build();
 
     //Act
     firstExpertBot.sendGroupchat(roomJID, new Operations.Ok());
@@ -106,7 +106,7 @@ public class ExpertCancelsTest extends BaseRoomTest {
     //final ReceivingMessageBuilder sync = new ReceivingMessageBuilder().has(Operations.Sync.class);
     final ReceivingMessageBuilder cancel = new ReceivingMessageBuilder().from(roomJID).has(Operations.Cancel.class);
     final ReceivingMessageBuilder cancelByFirstExpert = new ReceivingMessageBuilder().from(botRoomJID(roomJID, firstExpertBot)).has(Operations.Cancel.class);
-    final ReceivingMessage offerChange = new ReceivingMessageBuilder().from(groupChatJID(roomJID)).has(Operations.OfferChange.class).build();
+    final Receiving offerChange = new ReceivingMessageBuilder().from(groupChatJID(roomJID)).has(Operations.OfferChange.class).build();
 
     //Act
     adminBot.send(roomJID, offer);
@@ -144,7 +144,7 @@ public class ExpertCancelsTest extends BaseRoomTest {
   private void checkExpertStartsAndAnswers(BareJID roomJID, ExpertBot expertBot, ClientBot clientBot) throws JaxmppException {
     //Arrange
     final Answer answer = new Answer(generateRandomString());
-    final ReceivingMessage receivingAnswer = new ReceivingMessageBuilder()
+    final Receiving receivingAnswer = new ReceivingMessageBuilder()
         .from(botRoomJID(roomJID, expertBot))
         .has(Answer.class, a -> answer.value().equals(a.value()))
         .build();

@@ -1,7 +1,7 @@
 package com.expleague.bots;
 
 import com.expleague.bots.utils.ItemToTigaseElementParser;
-import com.expleague.bots.utils.ReceivingMessage;
+import com.expleague.bots.utils.Receiving;
 import com.expleague.model.Offer;
 import com.expleague.model.Operations;
 import com.expleague.xmpp.Item;
@@ -41,7 +41,7 @@ public class Bot {
   private final BareJID jid;
 
   protected final Jaxmpp jaxmpp = new Jaxmpp(new J2SESessionObject());
-  private final BlockingQueue<com.expleague.xmpp.stanza.Message> messagesQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<com.expleague.xmpp.stanza.Stanza> stanzasQueue = new LinkedBlockingQueue<>();
   private final StateLatch latch = new StateLatch();
 
   private boolean registered = false;
@@ -135,7 +135,7 @@ public class Bot {
 
       @Override
       public void process(Message stanza) throws JaxmppException {
-        onMessage(stanza);
+        onStanza(stanza);
       }
     });
 
@@ -230,26 +230,42 @@ public class Bot {
     jaxmpp.send(iq);
   }
 
-  public ReceivingMessage[] tryReceiveMessages(StateLatch stateLatch, ReceivingMessage... messages) throws JaxmppException {
+  public Receiving[] tryReceiveMessages(StateLatch stateLatch, Receiving... messages) throws JaxmppException {
     final long defaultTimeoutInNanos = 30L * 1000L * 1000L * 1000L;
     return tryReceiveMessages(stateLatch, defaultTimeoutInNanos, messages);
   }
 
-  public ReceivingMessage[] tryReceiveMessages(StateLatch stateLatch, long timeoutInNanos, ReceivingMessage... messages) throws JaxmppException {
+  public Receiving[] tryReceiveMessages(StateLatch stateLatch, long timeoutInNanos, Receiving... messages) throws JaxmppException {
     final int initState = stateLatch.state();
-    final int finalState = initState << Arrays.stream(messages).filter(ReceivingMessage::expected).count();
+    final int finalState = initState << Arrays.stream(messages).filter(Receiving::expected).count();
     final Thread messagesConsumer = new Thread(() -> {
       while (!Thread.currentThread().isInterrupted()) {
         try {
-          final com.expleague.xmpp.stanza.Message message = messagesQueue.take();
-          for (ReceivingMessage receivingMessage : messages) {
-            if (!receivingMessage.received() && receivingMessage.tryReceive(message) && receivingMessage.expected()) {
-              stateLatch.advance();
-              if (stateLatch.state() == initState) {
-                return;
+          final com.expleague.xmpp.stanza.Stanza stanza = stanzasQueue.take();
+          if (stanza instanceof com.expleague.xmpp.stanza.Message) {
+            com.expleague.xmpp.stanza.Message message = (com.expleague.xmpp.stanza.Message) stanza;
+            for (Receiving receivingMessage : messages) {
+              if (!receivingMessage.received() && receivingMessage.tryReceive(message) && receivingMessage.expected() && receivingMessage.isMessage()) {
+                stateLatch.advance();
+                if (stateLatch.state() == initState) {
+                  return;
+                }
+                break;
               }
-              break;
             }
+          } else if (stanza instanceof com.expleague.xmpp.stanza.Presence) {
+            com.expleague.xmpp.stanza.Presence presence = (com.expleague.xmpp.stanza.Presence) stanza;
+            for (Receiving receivingMessage : messages) {
+              if (!receivingMessage.received() && receivingMessage.tryReceive(presence) && receivingMessage.expected() && receivingMessage.isPresence()) {
+                stateLatch.advance();
+                if (stateLatch.state() == initState) {
+                  return;
+                }
+                break;
+              }
+            }
+          } else {
+            throw new RuntimeException();
           }
         } catch (InterruptedException ie) {
           Thread.currentThread().interrupt();
@@ -264,10 +280,10 @@ public class Bot {
     if (stateLatch.state() != initState) {
       stateLatch.state(initState);
     }
-    return Arrays.stream(messages).filter(em -> em.received() ^ em.expected()).toArray(ReceivingMessage[]::new);
+    return Arrays.stream(messages).filter(em -> em.received() ^ em.expected()).toArray(Receiving[]::new);
   }
 
-  private synchronized void onMessage(Message message) throws JaxmppException {
+  private synchronized void onStanza(Stanza message) throws JaxmppException {
     { //sending receipts
       final String receivedXMLNS = "urn:xmpp:receipts";
       final Element request = message.getFirstChild("request");
@@ -286,7 +302,7 @@ public class Bot {
       if (stanza.has(Offer.class) && stanza.has(Operations.Check.class)) {
         offerCheckReceived = true;
       }
-      messagesQueue.offer(stanza);
+      stanzasQueue.offer(stanza);
     }
   }
 

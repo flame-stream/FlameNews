@@ -3,6 +3,9 @@ package integration_tests;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.expleague.bots.Bot;
+import com.expleague.bots.utils.Receiving;
+import com.expleague.bots.utils.ReceivingMessageBuilder;
+import com.expleague.commons.util.sync.StateLatch;
 import com.expleague.server.ExpLeagueServer;
 import com.expleague.server.XMPPServer;
 import com.expleague.server.agents.LaborExchange;
@@ -13,7 +16,9 @@ import com.expleague.util.akka.ActorAdapter;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.control.expleague.flame.StartFlameQuery;
+import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.muc.MucItem;
+import com.expleague.xmpp.stanza.Iq;
 import com.expleague.xmpp.stanza.Message;
 import com.expleague.xmpp.stanza.Presence;
 import com.spbsu.flamestream.core.Graph;
@@ -38,6 +43,8 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 import static akka.actor.TypedActor.context;
+import static com.expleague.model.Affiliation.MEMBER;
+import static com.expleague.model.Role.PARTICIPANT;
 
 public class IqSendTest {
   @Test
@@ -77,17 +84,44 @@ public class IqSendTest {
     final Bot bot = new Bot(jid, "password", null);
     bot.start();
     final JID realJID = new JID(jid.getLocalpart(), jid.getDomain(), null);
-    final JID room = new JID("super_room3000", "muc.localhost", null);
+    final JID room = new JID("front", "muc.localhost", null);
     Presence pres = new Presence(realJID, room,  true);
     XMPP.send(pres, system);
+    StateLatch stateLatch = new StateLatch();
+    final Receiving roomCreated = new ReceivingMessageBuilder()
+            .from(room)
+            .isPresence()
+            .build();
+    Receiving[] receivedPresence = bot.tryReceiveMessages(stateLatch, 6000000000L, roomCreated);
+    if (receivedPresence.length != 1) {
+      throw new RuntimeException("Presence wasn't delivered");
+    }
     bot.sendIq(null, StanzaType.set,
               new StartFlameQuery(id, zkString, "localhost", 2552, WorkerApplication.Guarantees.AT_MOST_ONCE));
     final Source source = new Source();
     final Sink sink = new Sink();
+
+    JID rear_room = new JID("rear", "muc.localhost", null);
+    Presence creation = new Presence(realJID, rear_room, true);
+    XMPP.send(creation, system);
+    // sending iq for agent, so he can read the messages from muc
+    stateLatch = new StateLatch();
+    final Receiving rearRoomCreated = new ReceivingMessageBuilder()
+            .from(rear_room)
+            .isPresence()
+            .build();
+    Receiving[] receivedRearPresence = bot.tryReceiveMessages(stateLatch, 6000000000L, rearRoomCreated);
+    if (receivedRearPresence.length != 1) {
+      throw new RuntimeException("Presence wasn't delivered");
+    }
+    Iq setter = Iq.create(room, realJID,
+            Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, PARTICIPANT));
+    XMPP.send(setter, system);
+
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
-    Thread.sleep(10000);
-    Message mes = new Message(realJID, room, "ДАРОВА");
+    Thread.sleep(15000); // тут бы тоже слип убрать
+    Message mes = new Message(realJID, room, "Test is OK!");
     XMPP.send(mes, system);
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());

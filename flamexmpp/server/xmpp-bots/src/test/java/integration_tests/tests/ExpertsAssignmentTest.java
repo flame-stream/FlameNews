@@ -4,7 +4,7 @@ import com.expleague.bots.AdminBot;
 import com.expleague.bots.Bot;
 import com.expleague.bots.ClientBot;
 import com.expleague.bots.ExpertBot;
-import com.expleague.bots.utils.ReceivingMessage;
+import com.expleague.bots.utils.Receiving;
 import com.expleague.bots.utils.ReceivingMessageBuilder;
 import com.expleague.model.*;
 import com.expleague.xmpp.JID;
@@ -105,7 +105,7 @@ public class ExpertsAssignmentTest extends BaseRoomTest {
     final BareJID roomJID = obtainRoomOpenState(testName(), clientBot, adminBot);
     final Filter expertFilter = new Filter(null, null, Collections.singletonList(JID.parse(defaultExpert.jid().toString())));
     final Offer offer = new Offer(JID.parse(roomJID.toString()), expertFilter);
-    final ReceivingMessage invite = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Invite.class).build();
+    final Receiving invite = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Invite.class).build();
 
     //Act
     adminBot.send(roomJID, offer);
@@ -218,9 +218,9 @@ public class ExpertsAssignmentTest extends BaseRoomTest {
   private void checkDefaultExpertAnswersAndOthersDoNot(BareJID roomJID, ExpertBot defaultExpert, ExpertBot[] expertBots, ClientBot clientBot) throws JaxmppException {
     //Arrange
     final Answer answer = new Answer(generateRandomString());
-    final ReceivingMessage expectedAnswer = new ReceivingMessageBuilder().from(botRoomJID(roomJID, defaultExpert)).has(Answer.class, a -> answer.value().equals(a.value())).build();
+    final Receiving expectedAnswer = new ReceivingMessageBuilder().from(botRoomJID(roomJID, defaultExpert)).has(Answer.class, a -> answer.value().equals(a.value())).build();
     final ReceivingMessageBuilder invite = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Invite.class);
-    final ReceivingMessage startAndExpert = new ReceivingMessageBuilder().from(roomJID).has(Operations.Start.class).has(ExpertsProfile.class).build();
+    final Receiving startAndExpert = new ReceivingMessageBuilder().from(roomJID).has(Operations.Start.class).has(ExpertsProfile.class).build();
     final ReceivingMessageBuilder cancelOffer = new ReceivingMessageBuilder().from(roomJID).has(Offer.class).has(Operations.Cancel.class);
 
     //Act
