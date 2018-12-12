@@ -16,6 +16,7 @@ import com.expleague.util.akka.ActorAdapter;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
 import com.expleague.xmpp.control.expleague.flame.StartFlameQuery;
+import com.expleague.xmpp.control.receipts.Request;
 import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.muc.MucItem;
 import com.expleague.xmpp.stanza.Iq;
@@ -121,7 +122,7 @@ public class IqSendTest {
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
     Thread.sleep(15000); // тут бы тоже слип убрать
-    Message mes = new Message(realJID, room, "Test is OK!");
+    Message mes = new Message(realJID, room, new Message.Body("Test is OK!"), new Request());
     XMPP.send(mes, system);
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());

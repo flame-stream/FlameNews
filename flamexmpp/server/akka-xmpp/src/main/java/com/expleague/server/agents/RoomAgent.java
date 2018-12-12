@@ -134,10 +134,9 @@ public class RoomAgent extends PersistentActorAdapter {
     if (message.has(Received.class)) {
       persist(message, msg -> {
         archive(msg);
-        final Received receit = message.get(Received.class);
-        onDelivered(new Delivered(receit.id(), message.from().bare(), message.from().resource()));
+        final Received receipt = message.get(Received.class);
+        onDelivered(new Delivered(receipt.id(), message.from().bare(), message.from().resource()));
       });
-      return;
     }
 
     if (mode() != ProcessMode.REPLAY && !filter(message)) {
@@ -172,8 +171,7 @@ public class RoomAgent extends PersistentActorAdapter {
       final Serialization serialization = SerializationExtension.get(context().getSystem());
       consumer = serialization.deserialize(((ConsumerQuery) command.get()).getSerializeFront(),
               AkkaFront.FrontHandle.class).get();
-      return;
-    } // если пришел консьюмер, то больше ничего важного в iq нет
+    }
     if (process(command))
       if (mode != ProcessMode.RECOVER)
         persist(command, this::archive);
