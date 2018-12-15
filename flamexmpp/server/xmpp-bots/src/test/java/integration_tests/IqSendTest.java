@@ -102,7 +102,7 @@ public class IqSendTest {
     final Source source = new Source();
     final Sink sink = new Sink();
 
-    JID rear_room = new JID("rear", "muc.localhost", null);
+    final JID rear_room = new JID("rear", "muc.localhost", null);
     Presence creation = new Presence(realJID, rear_room, true);
     XMPP.send(creation, system);
     // sending iq for agent, so he can read the messages from muc
@@ -115,14 +115,16 @@ public class IqSendTest {
     if (receivedRearPresence.length != 1) {
       throw new RuntimeException("Presence wasn't delivered");
     }
-    Iq setter = Iq.create(room, realJID,
+    Iq setter = Iq.create(rear_room, realJID,
             Iq.IqType.SET, new MucAdminQuery("tg", MEMBER, PARTICIPANT));
     XMPP.send(setter, system);
+    Presence tg_pres = new Presence(new JID("tg", "localhost", "tg"), rear_room,  true);
+    XMPP.send(tg_pres, system);
 
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
     Thread.sleep(15000); // тут бы тоже слип убрать
-    Message mes = new Message(realJID, room, new Message.Body("Test is OK!"), new Request());
+    Message mes = new Message(realJID, room, Message.MessageType.GROUP_CHAT, new Message.Body("Test is OK!"), new Request());
     XMPP.send(mes, system);
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());

@@ -13,6 +13,7 @@ import com.expleague.util.akka.ActorMethod;
 import com.expleague.xmpp.JID;
 import com.expleague.xmpp.control.expleague.flame.ConsumerQuery;
 import com.expleague.xmpp.control.expleague.flame.GraphQuery;
+import com.expleague.xmpp.control.receipts.Request;
 import com.expleague.xmpp.muc.MucAdminQuery;
 import com.expleague.xmpp.stanza.Iq;
 import com.expleague.xmpp.stanza.Message;
@@ -88,7 +89,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
     public void invoke(Iq<GraphQuery> graphQueryIq) {
         // first member(me@localhost) -- muc creator
         JID room = new JID("rear", "muc.localhost", null);
-        JID owner = new JID("rear-worker", "localhost", null);
+        JID owner = new JID("worker", "localhost", null);
         Graph graph = new KryoSerializer().deserialize(graphQueryIq.get().getSerializeGraph(), Graph.class);
         FlameRuntime.Flame flame = remoteRuntime.run(graph);
         List<AkkaFront.FrontHandle<Object>> consumers =
@@ -98,7 +99,7 @@ public class GraphLoadService extends ActorAdapter<AbstractActor> {
                 flame.attachRear("rear-room", new AkkaRearType<>(context().system(), String.class))
                         .collect(Collectors.toList());
         rears.get(0).addListener((word) -> {
-            XMPP.send(new Message(owner, room, word), context());
+            XMPP.send(new Message(owner, room, Message.MessageType.GROUP_CHAT, new Message.Body(word), new Request()), context());
         }); // send to room
 
         final Serialization serialization = SerializationExtension.get(context().getSystem());
