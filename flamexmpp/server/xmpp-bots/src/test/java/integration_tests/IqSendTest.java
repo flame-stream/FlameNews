@@ -61,8 +61,7 @@ public class IqSendTest {
     zooKeeperApplication.run();
     String zkString = "localhost:" + ports.get(0);
 
-    //send
-      //start server
+    //start server
     final Config load = ConfigFactory.load();
     ExpLeagueServer.ServerCfg serverCfg;
     try {
@@ -123,9 +122,17 @@ public class IqSendTest {
 
     bot.sendIq(null, StanzaType.set,
             new GraphQuery(new Graph.Builder().link(source, sink).build(source, sink)));
-    Thread.sleep(15000); // тут бы тоже слип убрать
+    final Bot rearBot = new Bot(BareJID.bareJIDInstance(rear_room.local(), rear_room.domain()), "password", null);
+    Thread.sleep(10000); // тут бы тоже слип убрать
     Message mes = new Message(realJID, room, Message.MessageType.GROUP_CHAT, new Message.Body("Test is OK!"), new Request());
     XMPP.send(mes, system);
+    final Receiving messageDeliver = new ReceivingMessageBuilder()
+            .isMessage()
+            .build();
+    Receiving[] receivedMessage = rearBot.tryReceiveMessages(new StateLatch(), 6000000000L, messageDeliver);
+    if (receivedMessage.length != 1) {
+      throw new RuntimeException("Presence wasn't delivered");
+    }
     Thread.sleep(50000000);
     Await.ready(system.terminate(), Duration.Inf());
   }
