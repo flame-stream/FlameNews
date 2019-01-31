@@ -11,10 +11,9 @@ public class ConsumerQuery extends Item {
     public static final String NS = "http://expleague.com/scheme/consumer";
 
     @XmlAttribute
-    private byte[] serializeFront;
+    private byte[] serializedFront;
     @XmlAttribute
-    private byte[] serializeRear;
-
+    private byte[] serializedRear;
 
     public ConsumerQuery() {}
 
@@ -26,6 +25,7 @@ public class ConsumerQuery extends Item {
     public byte[] getSerializeFront() {
         return serializeFront;
     }
+
     public byte[] getSerializeRear() {
         return serializeRear;
     }

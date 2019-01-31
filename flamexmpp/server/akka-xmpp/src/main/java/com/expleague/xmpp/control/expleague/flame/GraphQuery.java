@@ -12,19 +12,22 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "query", namespace = GraphQuery.NS)
 public class GraphQuery extends Item {
     public static final String NS = "http://expleague.com/scheme/graph";
+    public static KrySer krySer = new KSer();
+
     static {
         XMPPServices.register(NS, GraphLoadService.class, "graph");
+
     }
     @XmlAttribute
-    private byte[] SerializeGraph;
+    private byte[] serializedGraph;
 
     public GraphQuery(){}
 
     public GraphQuery(Graph graph) {
-        SerializeGraph = new KryoSerializer().serialize(graph);
+        serializeGraph = krySer.serialize(graph);
     }
 
-    public byte[] getSerializeGraph() {
-        return SerializeGraph;
-    }
+  public Graph graph() {
+    return krySer.deserialize(serializedGraph, Graph.class);
+  }
 }
