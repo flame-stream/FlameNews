@@ -30,7 +30,7 @@
         <jcr.version>2.0</jcr.version>
         <commons.version>1.1</commons.version>
         <flexmark.version>0.19.0</flexmark.version>
-        <httpclient.version>4.5.3</httpclient.version>
+        <httpclient.version>4.5.13</httpclient.version>
         <akka-http.version>10.1.4</akka-http.version>
         <mysql-connector-java.version>5.1.37</mysql-connector-java.version>
         <lucene-analyzers.version>3.6.0</lucene-analyzers.version>
