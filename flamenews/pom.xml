@@ -16,6 +16,7 @@
 
     <modules>
         <module>vk-grabber</module>
+        <module>lenta-grabber</module>
         <module>commons</module>
     </modules>
 </project>
