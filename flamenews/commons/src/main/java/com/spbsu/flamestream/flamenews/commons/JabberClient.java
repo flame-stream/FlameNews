@@ -47,22 +47,34 @@ public class JabberClient {
 
   private final NavigableMap<Instant, String> messages = new ConcurrentSkipListMap<>();
 
-  public JabberClient(String id, String domain, String password) {
-    this(id, domain, password, 1000);
+  public JabberClient(String id, String domain, String password, AbstractStanzaModule<Message> handler) {
+    this(id, domain, password, 1000, handler);
   }
 
-  public JabberClient(String id, String domain, String password, int storeLimit) {
+  public JabberClient(String id, String domain, String password, int storeLimit, AbstractStanzaModule<Message> handler) {
+    initialize(domain);
     this.password = password;
     this.jid = JID.jidInstance(id, domain, RESOURCE);
+    this.storeLimit = storeLimit;
+    jaxmpp.getModulesManager().register(handler);
+  }
 
+  private void initialize(String domain) {
     jaxmpp.getProperties().setUserProperty(SessionObject.DOMAIN_NAME, domain);
     jaxmpp.getProperties().setUserProperty(SocketConnector.HOSTNAME_VERIFIER_DISABLED_KEY, true);
 
     PresenceModule.setPresenceStore(jaxmpp.getSessionObject(), new J2SEPresenceStore());
     jaxmpp.getModulesManager().register(new MucModule());
-    jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
     jaxmpp.getModulesManager().register(new RosterModule());
+  }
+
+  // legacy client
+  public JabberClient(String id, String domain, String password, int storeLimit) {
+    initialize(domain);
+    this.password = password;
+    this.jid = JID.jidInstance(id, domain, RESOURCE);
     this.storeLimit = storeLimit;
+    jaxmpp.getModulesManager().register(new PullHandler(jaxmpp, messages));
   }
 
   private void start() {

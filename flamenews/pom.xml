@@ -16,6 +16,7 @@
 
     <modules>
         <module>vk-grabber</module>
+        <module>telegram</module>
         <module>commons</module>
     </modules>
 </project>
